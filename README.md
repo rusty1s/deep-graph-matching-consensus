@@ -6,7 +6,7 @@
 
 This is a PyTorch implementation of **Deep Graph Matching Consensus**, as described in our paper:
 
-Matthias Fey, Jan E. Lenssen, Christopher Morris, Jonathan Masci, Nils M. Kriege: [Deep Graph Matching Consensus](https://arxiv.org/abs/) (CoRR 2019)
+Matthias Fey, Jan E. Lenssen, Christopher Morris, Jonathan Masci, Nils M. Kriege: [Deep Graph Matching Consensus](https://arxiv.org/abs/) *(CoRR 2019)*
 
 ## Installation
 
