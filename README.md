@@ -1,7 +1,5 @@
 # Deep Graph Matching Consensus
 
-<object data="https://github.com/rusty1s/deep-graph-matching-consensus/raw/master/figures/overview.pdf" type="application/pdf" width="700px" height="700px" />
-
 --------------------------------------------------------------------------------
 
 This is a PyTorch implementation of Deep Graph Matching Consensus, as described in our paper:
@@ -28,8 +26,6 @@ $ cd examples/
 $ python willow.py --category=Duck
 ```
 
-
-
 ## Cite
 
 Please cite [our paper](https://arxiv.org/abs/) if you use this code in your own work:
@@ -47,5 +43,5 @@ Please cite [our paper](https://arxiv.org/abs/) if you use this code in your own
 ## Running tests
 
 ```
-python setup.py test
+$ python setup.py test
 ```
