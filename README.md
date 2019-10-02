@@ -21,7 +21,7 @@ $ python setup.py install
 
 ## Running examples
 
-We provide training and evaluation procedures for the [WILLOW-ObjectClass]() dataset, the [PascalVOC with Berekely Annotations]() dataset, and the [DBP15K]() dataset, *e.g.*:
+We provide training and evaluation procedures for the [WILLOW-ObjectClass](https://pytorch-geometric.readthedocs.io/en/latest/modules/datasets.html#torch_geometric.datasets.WILLOWObjectClass) dataset, the [PascalVOC with Berekely Annotations](https://pytorch-geometric.readthedocs.io/en/latest/modules/datasets.html#torch_geometric.datasets.PascalVOCKeypoints) dataset, and the [DBP15K](https://pytorch-geometric.readthedocs.io/en/latest/modules/datasets.html#torch_geometric.datasets.DBP15K) dataset, *e.g.*:
 
 ```
 $ cd examples/
