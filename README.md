@@ -1,8 +1,6 @@
-# Deep Graph Matching Consensus
+<h1 align="center">Deep Graph Matching Consensus</h1>
 
-<p align="center">
-  <img width="90%" src="https://raw.githubusercontent.com/rusty1s/deep-graph-matching-consensus/master/figures/overview.png?token=ABU7ZATGTDHG6DPI3ANYBUS5TXPOQ" />
-</p>
+<img width="100%" src="https://raw.githubusercontent.com/rusty1s/deep-graph-matching-consensus/master/figures/overview.png?token=ABU7ZATGTDHG6DPI3ANYBUS5TXPOQ" />
 
 --------------------------------------------------------------------------------
 
@@ -31,10 +29,10 @@ $ python willow.py --category=Duck
 ```
 
 <p align="center">
-  <img height="50px" src="https://raw.githubusercontent.com/rusty1s/deep-graph-matching-consensus/master/figures/best_motorbike.png?token=ABU7ZAX225LWQP4BLVMFOXK5TXPRO" />
-  <img height="50px" src="https://raw.githubusercontent.com/rusty1s/deep-graph-matching-consensus/master/figures/best_motorbike.png?token=ABU7ZAX225LWQP4BLVMFOXK5TXPRO" />
-  <img height="50px" src="https://raw.githubusercontent.com/rusty1s/deep-graph-matching-consensus/master/figures/best_motorbike.png?token=ABU7ZAX225LWQP4BLVMFOXK5TXPRO" />
-  <img height="50px" src="https://raw.githubusercontent.com/rusty1s/deep-graph-matching-consensus/master/figures/best_motorbike.png?token=ABU7ZAX225LWQP4BLVMFOXK5TXPRO" />
+  <img height="250px" src="https://raw.githubusercontent.com/rusty1s/deep-graph-matching-consensus/master/figures/best_motorbike.png?token=ABU7ZAX225LWQP4BLVMFOXK5TXPRO" />
+  <img height="250px" src="https://raw.githubusercontent.com/rusty1s/deep-graph-matching-consensus/master/figures/best_motorbike.png?token=ABU7ZAX225LWQP4BLVMFOXK5TXPRO" />
+  <img height="250px" src="https://raw.githubusercontent.com/rusty1s/deep-graph-matching-consensus/master/figures/best_motorbike.png?token=ABU7ZAX225LWQP4BLVMFOXK5TXPRO" />
+  <img height="250px" src="https://raw.githubusercontent.com/rusty1s/deep-graph-matching-consensus/master/figures/best_motorbike.png?token=ABU7ZAX225LWQP4BLVMFOXK5TXPRO" />
 </p>
 
 ## Cite
@@ -44,7 +42,7 @@ Please cite [our paper](https://arxiv.org/abs/) if you use this code in your own
 ```
 @article{Fey/etal/2019,
   title={Deep Graph Matching Consensus},
-  author={Fey, Matthias and Lenssen, Jan E. and Morris, Christopher and Masci, Jonathan, Kriege, Nils M.},
+  author={Fey, M. and Lenssen, J. E. and Morris, C. and Masci, J. and Kriege, N. M.},
   journal={CoRR},
   volume={abs/},
   year={2019},
