@@ -30,9 +30,9 @@ $ python willow.py --category=Duck
 
 <p align="center">
   <img height="250px" src="https://raw.githubusercontent.com/rusty1s/deep-graph-matching-consensus/master/figures/best_motorbike.png?token=ABU7ZAX225LWQP4BLVMFOXK5TXPRO" />
-  <img height="250px" src="https://raw.githubusercontent.com/rusty1s/deep-graph-matching-consensus/master/figures/best_motorbike.png?token=ABU7ZAX225LWQP4BLVMFOXK5TXPRO" />
-  <img height="250px" src="https://raw.githubusercontent.com/rusty1s/deep-graph-matching-consensus/master/figures/best_motorbike.png?token=ABU7ZAX225LWQP4BLVMFOXK5TXPRO" />
-  <img height="250px" src="https://raw.githubusercontent.com/rusty1s/deep-graph-matching-consensus/master/figures/best_motorbike.png?token=ABU7ZAX225LWQP4BLVMFOXK5TXPRO" />
+  <img height="250px" src="https://raw.githubusercontent.com/rusty1s/deep-graph-matching-consensus/master/figures/best_car.png?token=ABU7ZAS4IBROSQUHHM6JRPS5TXRMG" />
+  <img height="250px" src="https://raw.githubusercontent.com/rusty1s/deep-graph-matching-consensus/master/figures/best_duck.png?token=ABU7ZASBUISFO6UKAVIEAWC5TXRK6" />
+  <img height="250px" src="https://raw.githubusercontent.com/rusty1s/deep-graph-matching-consensus/master/figures/worst_duck.png?token=ABU7ZAX6JXQS4NPYBK4Q32C5TXRNE" />
 </p>
 
 ## Cite
