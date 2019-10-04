@@ -1,0 +1,6 @@
+[run]
+source=dgmc
+[report]
+exclude_lines =
+    pragma: no cover
+    raise

@@ -6,4 +6,3 @@ dist/
 .eggs/
 *.egg-info/
 .coverage
-*.so
