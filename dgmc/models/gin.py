@@ -20,7 +20,6 @@ class GIN(torch.nn.Module):
         super(GIN, self).__init__()
 
         self.in_channels = in_channels
-        self.out_channels = out_channels
         self.num_layers = num_layers
         self.batch_norm = batch_norm
         self.cat = cat
@@ -37,7 +36,11 @@ class GIN(torch.nn.Module):
         else:
             in_channels = out_channels
 
-        self.final = Lin(in_channels, out_channels) if self.lin else None
+        if self.lin:
+            self.out_channels = out_channels
+            self.final = Lin(in_channels, out_channels)
+        else:
+            self.out_channels = in_channels
 
         self.reset_parameters()
 
@@ -47,7 +50,7 @@ class GIN(torch.nn.Module):
         if self.lin:
             self.final.reset_parameters()
 
-    def forward(self, x, edge_index):
+    def forward(self, x, edge_index, *args):
         xs = [x]
 
         for conv in self.convs:

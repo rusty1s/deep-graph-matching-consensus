@@ -10,7 +10,6 @@ class SplineCNN(torch.nn.Module):
         super(SplineCNN, self).__init__()
 
         self.in_channels = in_channels
-        self.out_channels = out_channels
         self.dim = dim
         self.num_layers = num_layers
         self.cat = cat
@@ -28,7 +27,11 @@ class SplineCNN(torch.nn.Module):
         else:
             in_channels = out_channels
 
-        self.final = Lin(in_channels, out_channels) if self.lin else None
+        if self.lin:
+            self.out_channels = out_channels
+            self.final = Lin(in_channels, out_channels)
+        else:
+            self.out_channels = in_channels
 
         self.reset_parameters()
 
@@ -38,7 +41,7 @@ class SplineCNN(torch.nn.Module):
         if self.lin:
             self.final.reset_parameters()
 
-    def forward(self, x, edge_index, edge_attr):
+    def forward(self, x, edge_index, edge_attr, *args):
         xs = [x]
 
         for conv in self.convs:
