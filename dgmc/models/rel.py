@@ -47,13 +47,14 @@ class RelCNN(torch.nn.Module):
         self.num_layers = num_layers
         self.batch_norm = batch_norm
         self.cat = cat
+        self.lin = lin
         self.dropout = dropout
 
         self.convs = torch.nn.ModuleList()
         self.batch_norms = torch.nn.ModuleList()
         for _ in range(num_layers):
             self.convs.append(RelConv(in_channels, out_channels))
-            self.bns.append(BN(out_channels))
+            self.batch_norms.append(BN(out_channels))
             in_channels = out_channels
 
         if self.cat:
@@ -76,7 +77,7 @@ class RelCNN(torch.nn.Module):
 
     def forward(self, x, edge_index):
         xs = [x]
-        for conv, batch_norm in zip(self.convs, self.batch_norm):
+        for conv, batch_norm in zip(self.convs, self.batch_norms):
             x = conv(xs[-1], edge_index)
             x = batch_norm(F.relu(x)) if self.batch_norm else x
             x = F.dropout(x, p=self.dropout, training=self.training)

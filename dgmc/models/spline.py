@@ -49,3 +49,10 @@ class SplineCNN(torch.nn.Module):
         x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.final(x) if self.lin else x
         return x
+
+    def __repr__(self):
+        return ('{}({}, {}, dim={}, num_layers={}, cat={}, lin={}, '
+                'dropout={})').format(self.__class__.__name__,
+                                      self.in_channels, self.out_channels,
+                                      self.dim, self.num_layers, self.cat,
+                                      self.lin, self.dropout)
