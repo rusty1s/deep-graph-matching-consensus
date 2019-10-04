@@ -62,9 +62,7 @@ class RelCNN(torch.nn.Module):
         else:
             in_channels = out_channels
 
-        if self.lin:
-            self.final = Lin(self.in_channels + num_layers * out_channels,
-                             out_channels)
+        self.final = Lin(in_channels, out_channels) if self.lin else None
 
         self.reset_parameters()
 
@@ -77,6 +75,7 @@ class RelCNN(torch.nn.Module):
 
     def forward(self, x, edge_index):
         xs = [x]
+
         for conv, batch_norm in zip(self.convs, self.batch_norms):
             x = conv(xs[-1], edge_index)
             x = batch_norm(F.relu(x)) if self.batch_norm else x

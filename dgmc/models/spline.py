@@ -28,9 +28,7 @@ class SplineCNN(torch.nn.Module):
         else:
             in_channels = out_channels
 
-        if self.lin:
-            self.final = Lin(self.in_channels + num_layers * out_channels,
-                             out_channels)
+        self.final = Lin(in_channels, out_channels) if self.lin else None
 
         self.reset_parameters()
 
@@ -42,6 +40,7 @@ class SplineCNN(torch.nn.Module):
 
     def forward(self, x, edge_index, edge_attr):
         xs = [x]
+
         for conv in self.convs:
             xs += [F.relu(conv(xs[-1], edge_index, edge_attr))]
 
