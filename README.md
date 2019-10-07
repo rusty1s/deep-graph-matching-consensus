@@ -18,6 +18,7 @@ $ python setup.py install
 
 * **[PyTorch](https://pytorch.org/get-started/locally/)** (>=1.2.0)
 * **[PyTorch Geometric](https://github.com/rusty1s/pytorch_geometric)** (>=1.3.2)
+* **[KeOps](https://github.com/getkeops/keops)** (>=1.1.0)
 
 ## Running examples
 
