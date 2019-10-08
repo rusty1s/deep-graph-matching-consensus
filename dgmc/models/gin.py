@@ -1,5 +1,6 @@
 import torch
-from torch.nn import Sequential as Seq, Linear as Lin, ReLU, BatchNorm1d as BN
+from torch.nn import (Sequential as Seq, Linear as Lin, ReLU, Identity,
+                      BatchNorm1d as BN)
 from torch_geometric.nn import GINConv
 
 
@@ -7,10 +8,10 @@ def MLP(in_channels, out_channels, batch_norm=True):
     return Seq(
         Lin(in_channels, out_channels),
         ReLU(),
-        BN(out_channels) if batch_norm else lambda x: x,
+        BN(out_channels) if batch_norm else Identity(),
         Lin(out_channels, out_channels),
         ReLU(),
-        BN(out_channels) if batch_norm else lambda x: x,
+        BN(out_channels) if batch_norm else Identity(),
     )
 
 
