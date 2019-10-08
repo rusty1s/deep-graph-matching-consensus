@@ -24,7 +24,30 @@ def to_dense(x, mask):
 
 
 class DGMC(torch.nn.Module):
-    r""""""
+    r"""The Deep Graph Matching Conensus module which first matches nodes
+    locally via a graph neural network :math:`\Psi_{\theta_1}`, and then
+    updates correspondence scores iteratively by reaching for neighborhood
+    consensus via a second graph neural network :math:`\Psi_{\theta_2}`.
+
+    Args:
+        psi_1 (torch.nn.Module): The first GNN :math:`\Psi_{\theta_1}` which
+            takes in node features :obj:`x`, edge connectivity :`edge_index`,
+            and optional edge features :`edge_attr`.
+        psi_2 (torch.nn.Module): The second GNN :math:`\Psi_{\theta_2}` which
+            takes in node features :obj:`x`, edge connectivity :`edge_index`,
+            and optional edge features :`edge_attr`.
+            :obj:`psi_2` needs to hold the attributes :obj:`in_channels` and
+            :obj:`out_channels` indicating the dimensionality of randomly drawn
+            node indicator functions and the output dimensionality of
+            :obj:`psi_2` respectively.
+        num_steps (int): Number of consensus iterations.
+        k (int, optional): The sparsity parameter. If set to :obj:`-1`, will
+            not sparsify initial correspondence rankings. (default: :obj:`-1`)
+        detach (bool, optional): If set to :obj:`True`, will detach the
+            computation of :math:`\Psi_{\theta_1}` from the current graph.
+            (default: :obj:`False`)
+    """
+
     def __init__(self, psi_1, psi_2, num_steps, k=-1, detach=False):
         super(DGMC, self).__init__()
 
