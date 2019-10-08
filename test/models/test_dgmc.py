@@ -23,7 +23,7 @@ def test_dgmc():
 
     torch.manual_seed(12345)
     S1_0, S1_L = model(x, e, None, None, x, e, None, None)
-    model.k = data.num_nodes
+    model.k = data.num_nodes  # Test a sparse "dense" variant.
     torch.manual_seed(12345)
     S2_0, S2_L, S2_idx = model(x, e, None, None, x, e, None, None)
 

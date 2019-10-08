@@ -53,20 +53,19 @@ class DGMC(torch.nn.Module):
         return S_ij.argKmin(self.k, dim=1, backend=backend)
 
     def forward(self, x_s, edge_index_s, edge_attr_s, batch_s, x_t,
-                edge_index_t, edge_attr_t, batch_t):
+                edge_index_t, edge_attr_t, batch_t, y=None):
         h_s = self.psi_1(x_s, edge_index_s, edge_attr_s)
         h_t = self.psi_1(x_t, edge_index_t, edge_attr_t)
 
         h_s, h_t = (h_s.detach(), h_t.detach()) if self.detach else (h_s, h_t)
 
-        # TODO: Skip for batch=None?
         h_s, h_s_mask = to_dense_batch(h_s, batch_s, fill_value=float('inf'))
         h_t, h_t_mask = to_dense_batch(h_t, batch_t, fill_value=float('-inf'))
 
         rnd_size = (h_s.size(0), h_s.size(1), self.psi_2.in_channels)
 
         if self.k < 1:
-            # Dense variant:
+            # ------ Dense variant ------ #
             S_hat = h_s @ h_t.transpose(-1, -2)
             S_mask = h_s_mask.unsqueeze(-1) & h_t_mask.unsqueeze(-2)
             S_0 = masked_softmax(S_hat, S_mask, dim=-1)
@@ -88,8 +87,11 @@ class DGMC(torch.nn.Module):
 
             return S_0, S_L
         else:
-            # Sparse variant:
+            # ------ Sparse variant ------ #
             S_idx = self.top_k(h_s, h_t)
+            if self.training and y is not None:
+                # TODO: Include gt as index
+                pass
             tmp_s = h_s.unsqueeze(-2)
             tmp_t = h_t.unsqueeze(-3).expand(-1, h_s.size(-2), -1, -1)
             idx = S_idx.unsqueeze(-1).expand(-1, -1, -1, h_t.size(-1))
