@@ -24,6 +24,7 @@ def to_dense(x, mask):
 
 
 class DGMC(torch.nn.Module):
+    r""""""
     def __init__(self, psi_1, psi_2, num_steps, k=-1, detach=False):
         super(DGMC, self).__init__()
 
@@ -54,6 +55,7 @@ class DGMC(torch.nn.Module):
 
     def forward(self, x_s, edge_index_s, edge_attr_s, batch_s, x_t,
                 edge_index_t, edge_attr_t, batch_t, y=None):
+        r""""""
         h_s = self.psi_1(x_s, edge_index_s, edge_attr_s)
         h_t = self.psi_1(x_t, edge_index_t, edge_attr_t)
 
