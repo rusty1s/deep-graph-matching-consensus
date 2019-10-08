@@ -21,8 +21,11 @@ def test_dgmc():
         'lin=True),\n'
         '    num_steps=1, k=-1\n)')
 
+    torch.manual_seed(12345)
     S1_0, S1_L = model(x, e, None, None, x, e, None, None)
     model.k = data.num_nodes
+    torch.manual_seed(12345)
     S2_0, S2_L, S2_idx = model(x, e, None, None, x, e, None, None)
 
     assert torch.allclose(torch.gather(S1_0, -1, S2_idx), S2_0)
+    assert torch.allclose(torch.gather(S1_L, -1, S2_idx), S2_L)
