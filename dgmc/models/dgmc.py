@@ -103,9 +103,10 @@ class DGMC(torch.nn.Module):
 
         Returns:
             :obj:`(S_0, S_L)` of shapes
-            :obj:`[batch_size, num_nodes, num_nodes]` in case :obj:`k < 1`,
-            otherwise :obj:`(S_0, S_L, S_idx)` of shapes
-            :obj:`[batch_size, num_nodes, k]`.
+            :obj:`[batch_size, num_nodes, num_nodes]` in case :obj:`k < 1`.
+
+            :obj:`(S_0, S_L, S_idx)` of shapes
+            :obj:`[batch_size, num_nodes, k]` in case :obj:`k > 0`.
         """
         h_s = self.psi_1(x_s, edge_index_s, edge_attr_s)
         h_t = self.psi_1(x_t, edge_index_t, edge_attr_t)
