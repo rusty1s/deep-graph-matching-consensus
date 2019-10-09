@@ -76,6 +76,8 @@ class DGMC(torch.nn.Module):
         return S_ij.argKmin(self.k, dim=1, backend=self.backend)
 
     def __append_gt__(self, S_idx, s_mask, y):
+        r"""Appends the ground-truth values in :obj:`y` to the index tensor
+        :obj:`S_idx`."""
         (B, N_s), (row, col), k = s_mask.size(), y, S_idx.size(-1)
 
         gt_mask = (S_idx[s_mask][row] != col.view(-1, 1)).all(dim=-1)
@@ -166,7 +168,6 @@ class DGMC(torch.nn.Module):
             # ------ Sparse variant ------ #
             S_idx = self.__top_k__(h_s, h_t)  # [B, N_s, k]
 
-            # Append ground-truth values to the index tensor.
             if self.training and y is not None:
                 S_idx = self.__append_gt__(S_idx, s_mask, y)
 
