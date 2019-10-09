@@ -46,9 +46,11 @@ class DGMC(torch.nn.Module):
         detach (bool, optional): If set to :obj:`True`, will detach the
             computation of :math:`\Psi_{\theta_1}` from the current graph.
             (default: :obj:`False`)
+        backend (str, optional): Specifies the map-reduce scheme used in KeOps.
+            (default: :obj:`auto`)
     """
-
-    def __init__(self, psi_1, psi_2, num_steps, k=-1, detach=False):
+    def __init__(self, psi_1, psi_2, num_steps, k=-1, detach=False,
+                 backend='auto'):
         super(DGMC, self).__init__()
 
         self.psi_1 = psi_1
@@ -56,6 +58,7 @@ class DGMC(torch.nn.Module):
         self.num_steps = num_steps
         self.k = k
         self.detach = detach
+        self.backend = backend
 
         self.mlp = Seq(
             Lin(psi_2.out_channels, psi_2.out_channels),
@@ -71,10 +74,9 @@ class DGMC(torch.nn.Module):
         reset(self.mlp)
 
     def top_k(self, x_s, x_t):
-        backend = 'CPU' if x_s.device.type == 'cpu' else 'auto'
         x_s, x_t = LazyTensor(x_s.unsqueeze(-2)), LazyTensor(x_t.unsqueeze(-3))
         S_ij = (-x_s * x_t).sum(dim=-1)
-        return S_ij.argKmin(self.k, dim=1, backend=backend)
+        return S_ij.argKmin(self.k, dim=1, backend=self.backend)
 
     def forward(self, x_s, edge_index_s, edge_attr_s, batch_s, x_t,
                 edge_index_t, edge_attr_t, batch_t, y=None):
