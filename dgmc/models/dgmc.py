@@ -89,17 +89,19 @@ class DGMC(torch.nn.Module):
         h_s, h_s_mask = to_dense_batch(h_s, batch_s, fill_value=float('inf'))
         h_t, h_t_mask = to_dense_batch(h_t, batch_t, fill_value=float('-inf'))
 
-        rnd_size = (h_s.size(0), h_s.size(1), self.psi_2.in_channels)
+        assert h_s.size(0) == h_t.size(0), 'Encountered unequal batch-sizes'
+        (B, N_s, F), N_t, R = h_s.size(), h_s.size(1), self.psi_2.in_channels
 
         if self.k < 1:
             # ------ Dense variant ------ #
-            S_hat = h_s @ h_t.transpose(-1, -2)
-            S_mask = h_s_mask.unsqueeze(-1) & h_t_mask.unsqueeze(-2)
+            S_hat = h_s @ h_t.transpose(-1, -2)  # [B, N_s, N_t, F]
+            S_mask = h_s_mask.view(B, N_s, 1) & h_t_mask.view(B, 1, N_t)
             S_0 = masked_softmax(S_hat, S_mask, dim=-1)
 
             for _ in range(self.num_steps):
                 S = masked_softmax(S_hat, S_mask, dim=-1)
-                r_s = torch.randn(rnd_size, dtype=h_s.dtype, device=h_s.device)
+                r_s = torch.randn((B, N_s, R), dtype=h_s.dtype,
+                                  device=h_s.device)
                 r_t = S.transpose(-1, -2) @ r_s
 
                 r_s, r_t = to_sparse(r_s, h_s_mask), to_sparse(r_t, h_t_mask)
@@ -107,7 +109,7 @@ class DGMC(torch.nn.Module):
                 o_t = self.psi_2(r_t, edge_index_t, edge_attr_t)
                 o_s, o_t = to_dense(o_s, h_s_mask), to_dense(o_t, h_t_mask)
 
-                D = o_s.unsqueeze(-2) - o_t.unsqueeze(-3)
+                D = o_s.view(B, N_s, 1, R) - o_t.view(B, 1, N_t, R)
                 S_hat = S_hat + self.mlp(D).squeeze(-1).masked_fill(~S_mask, 0)
 
             S_L = masked_softmax(S_hat, S_mask, dim=-1)
@@ -115,36 +117,34 @@ class DGMC(torch.nn.Module):
             return S_0, S_L
         else:
             # ------ Sparse variant ------ #
-            S_idx = self.top_k(h_s, h_t)
+            S_idx = self.top_k(h_s, h_t)  # [B, N_s, k]
             if self.training and y is not None:
                 # TODO: Include gt as index
                 pass
-            tmp_s = h_s.unsqueeze(-2)
-            tmp_t = h_t.unsqueeze(-3).expand(-1, h_s.size(-2), -1, -1)
-            idx = S_idx.unsqueeze(-1).expand(-1, -1, -1, h_t.size(-1))
+            tmp_s = h_s.view(B, N_s, 1, F)
+            tmp_t = h_t.view(B, 1, N_t, F).expand(-1, N_s, -1, -1)
+            idx = S_idx.view(B, N_s, self.k, 1).expand(-1, -1, -1, F)
             S_hat = (tmp_s * torch.gather(tmp_t, -2, idx)).sum(dim=-1)
             S_0 = S_hat.softmax(dim=-1)
 
             for _ in range(self.num_steps):
                 S = S_hat.softmax(dim=-1)
-                r_s = torch.randn(rnd_size, dtype=h_s.dtype, device=h_s.device)
+                r_s = torch.randn((B, N_s, R), dtype=h_s.dtype,
+                                  device=h_s.device)
 
-                tmp_t = r_s.unsqueeze(-2).expand(-1, -1, self.k, -1)
-                tmp_t = tmp_t * S.unsqueeze(-1)
-                tmp_t = tmp_t.view(r_s.size(0), -1, r_s.size(-1))
-                idx = S_idx.view(S_idx.size(0), -1, 1)
-                r_t = scatter_add(tmp_t, idx, dim=1, dim_size=h_t.size(1))
+                tmp_t = r_s.view(B, N_s, 1, R) * S.view(B, N_s, self.k, 1)
+                tmp_t = tmp_t.view(B, N_s * self.k, R)
+                idx = S_idx.view(B, N_s * self.k, 1)
+                r_t = scatter_add(tmp_t, idx, dim=1, dim_size=N_t)
 
                 r_s, r_t = to_sparse(r_s, h_s_mask), to_sparse(r_t, h_t_mask)
                 o_s = self.psi_2(r_s, edge_index_s, edge_attr_s)
                 o_t = self.psi_2(r_t, edge_index_t, edge_attr_t)
                 o_s, o_t = to_dense(o_s, h_s_mask), to_dense(o_t, h_t_mask)
 
-                o_s = o_s.unsqueeze(-2)
-                o_t = o_t.unsqueeze(-3).expand(-1, r_s.size(-2), -1, -1)
-                idx = S_idx.unsqueeze(-1).expand(-1, -1, -1, r_t.size(-1))
-
-                D = o_s - torch.gather(o_t, -2, idx)
+                o_t = o_t.view(B, 1, N_t, R).expand(-1, N_s, -1, -1)
+                idx = S_idx.view(B, N_s, self.k, 1).expand(-1, -1, -1, R)
+                D = o_s.view(B, N_s, 1, R) - torch.gather(o_t, -2, idx)
                 S_hat = S_hat + self.mlp(D).squeeze(-1)
 
             S_L = S_hat.softmax(dim=-1)
