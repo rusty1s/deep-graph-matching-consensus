@@ -45,11 +45,8 @@ class DGMC(torch.nn.Module):
         detach (bool, optional): If set to :obj:`True`, will detach the
             computation of :math:`\Psi_{\theta_1}` from the current graph.
             (default: :obj:`False`)
-        backend (str, optional): Specifies the map-reduce scheme used in KeOps.
-            (default: :obj:`auto`)
     """
-    def __init__(self, psi_1, psi_2, num_steps, k=-1, detach=False,
-                 backend='auto'):
+    def __init__(self, psi_1, psi_2, num_steps, k=-1, detach=False):
         super(DGMC, self).__init__()
 
         self.psi_1 = psi_1
@@ -57,7 +54,7 @@ class DGMC(torch.nn.Module):
         self.num_steps = num_steps
         self.k = k
         self.detach = detach
-        self.backend = backend
+        self.backend = 'auto'
 
         self.mlp = Seq(
             Lin(psi_2.out_channels, psi_2.out_channels),
