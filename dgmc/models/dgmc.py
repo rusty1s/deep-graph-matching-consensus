@@ -69,14 +69,44 @@ class DGMC(torch.nn.Module):
         self.psi_2.reset_parameters()
         reset(self.mlp)
 
-    def top_k(self, x_s, x_t):
+    def __top_k__(self, x_s, x_t):
         x_s, x_t = LazyTensor(x_s.unsqueeze(-2)), LazyTensor(x_t.unsqueeze(-3))
         S_ij = (-x_s * x_t).sum(dim=-1)
         return S_ij.argKmin(self.k, dim=1, backend=self.backend)
 
     def forward(self, x_s, edge_index_s, edge_attr_s, batch_s, x_t,
                 edge_index_t, edge_attr_t, batch_t, y=None):
-        r""""""
+        r"""
+        Args:
+            x_s (Tensor): Source graph node features of shape
+                :obj:`[num_nodes, F]`.
+            edge_index_s (LongTensor): Source graph edge connectivity of shape
+                :obj:`[2, num_edges]`.
+            edge_attr_s (Tensor): Source graph edge features of shape
+                :obj:`[num_edges, D]`. Can be :obj:`None`.
+            batch_s (LongTensor): Source graph batch vector of shape
+                :obj:`[num_nodes]` indicating node to graph assignment. Can
+                be :obj:`None` in case operating on single graphs.
+            x_t (Tensor): Target graph node features of shape
+                :obj:`[num_nodes, F]`.
+            edge_index_t (LongTensor): Target graph edge connectivity of shape
+                :obj:`[2, num_edges]`.
+            edge_attr_t (Tensor): Target graph edge features of shape
+                :obj:`[num_edges, D]`. Can be :obj:`None`.
+            batch_t (LongTensor): Target graph batch vector of shape
+                :obj:`[num_nodes]` indicating node to graph assignment. Can
+                be :obj:`None` in case operating on single graphs.
+            y (LongTensor, optional): Ground-truth matching to include
+                ground-truth values when training against sparse initial
+                correspondences. Is only used in case the model is in training
+                mode. (default: :obj:`None`)
+
+        Returns:
+            :obj:`(S_0, S_L)` of shapes
+            :obj:`[batch_size, num_nodes, num_nodes]` in case :obj:`k < 1`,
+            otherwise :obj:`(S_0, S_L, S_idx)` of shapes
+            :obj:`[batch_size, num_nodes, k]`.
+        """
         h_s = self.psi_1(x_s, edge_index_s, edge_attr_s)
         h_t = self.psi_1(x_t, edge_index_t, edge_attr_t)
 
@@ -113,7 +143,7 @@ class DGMC(torch.nn.Module):
             return S_0, S_L
         else:
             # ------ Sparse variant ------ #
-            S_idx = self.top_k(h_s, h_t)  # [B, N_s, k]
+            S_idx = self.__top_k__(h_s, h_t)  # [B, N_s, k]
             if self.training and y is not None:
                 # TODO: Include gt as index
                 pass
