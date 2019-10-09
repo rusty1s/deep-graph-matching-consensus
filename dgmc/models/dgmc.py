@@ -101,12 +101,14 @@ class DGMC(torch.nn.Module):
                 correspondences. Is only used in case the model is in training
                 mode. (default: :obj:`None`)
 
-        Returns:
-            :obj:`(S_0, S_L)` of shapes
-            :obj:`[batch_size, num_nodes, num_nodes]` in case :obj:`k < 1`.
+        Returns (if :obj:`k < 1`):
+            Initial and refined correspondence matrices :obj:`(S_0, S_L)` of
+            shapes :obj:`[batch_size, num_nodes, num_nodes]`.
 
-            :obj:`(S_0, S_L, S_idx)` of shapes
-            :obj:`[batch_size, num_nodes, k]` in case :obj:`k > 0`.
+        Returns (if :obj:`k >= 1`):
+            Initial and refined sparse correspondence matrices
+            :obj:`(S_0, S_L, S_idx)` including the corresponding index tensor
+            of shapes :obj:`[batch_size, num_nodes, k]`.
         """
         h_s = self.psi_1(x_s, edge_index_s, edge_attr_s)
         h_t = self.psi_1(x_t, edge_index_t, edge_attr_t)
