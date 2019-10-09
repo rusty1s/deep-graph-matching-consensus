@@ -19,8 +19,7 @@ def to_sparse(x, mask):
 
 def to_dense(x, mask):
     out = x.new_zeros(tuple(mask.size()) + (x.size(-1), ))
-    out[mask] = x
-    return out
+    return out.masked_scatter_(mask.unsqueeze(-1), x)
 
 
 class DGMC(torch.nn.Module):
