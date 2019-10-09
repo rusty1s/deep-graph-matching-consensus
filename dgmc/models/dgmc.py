@@ -19,7 +19,8 @@ def to_sparse(x, mask):
 
 def to_dense(x, mask):
     out = x.new_zeros(tuple(mask.size()) + (x.size(-1), ))
-    return out.masked_scatter_(mask.unsqueeze(-1), x)
+    out[mask] = x
+    return out
 
 
 class DGMC(torch.nn.Module):
@@ -74,6 +75,22 @@ class DGMC(torch.nn.Module):
         S_ij = (-x_s * x_t).sum(dim=-1)
         return S_ij.argKmin(self.k, dim=1, backend=self.backend)
 
+    def __append_gt__(self, S_idx, s_mask, y):
+        (B, N_s), (row, col), k = s_mask.size(), y, S_idx.size(-1)
+
+        gt_mask = (S_idx[s_mask][row] != col.view(-1, 1)).all(dim=-1)
+
+        sparse_mask = gt_mask.new_zeros((s_mask.sum(), ))
+        sparse_mask[row] = gt_mask
+
+        dense_mask = sparse_mask.new_zeros((B, N_s))
+        dense_mask[s_mask] = sparse_mask
+        last_entry = torch.zeros(k, dtype=torch.bool, device=gt_mask.device)
+        last_entry[-1] = 1
+        dense_mask = dense_mask.view(B, N_s, 1) * last_entry.view(1, 1, k)
+
+        return S_idx.masked_scatter(dense_mask, col[gt_mask])
+
     def forward(self, x_s, edge_index_s, edge_attr_s, batch_s, x_t,
                 edge_index_t, edge_attr_t, batch_t, y=None):
         r"""
@@ -96,10 +113,11 @@ class DGMC(torch.nn.Module):
             batch_t (LongTensor): Target graph batch vector of shape
                 :obj:`[num_nodes]` indicating node to graph assignment. Can
                 be :obj:`None` in case operating on single graphs.
-            y (LongTensor, optional): Ground-truth matching to include
-                ground-truth values when training against sparse initial
-                correspondences. Is only used in case the model is in training
-                mode. (default: :obj:`None`)
+            y (LongTensor, optional): Ground-truth matchings of shape
+                :obj:`[2, num_ground_truths]` to include ground-truth values
+                when training against sparse correspondences. Ground-truths
+                are only used in case the model is in training mode.
+                (default: :obj:`None`)
 
         Returns (if :obj:`k < 1`):
             Initial and refined correspondence matrices :obj:`(S_0, S_L)` of
@@ -115,8 +133,8 @@ class DGMC(torch.nn.Module):
 
         h_s, h_t = (h_s.detach(), h_t.detach()) if self.detach else (h_s, h_t)
 
-        h_s, h_s_mask = to_dense_batch(h_s, batch_s, fill_value=float('inf'))
-        h_t, h_t_mask = to_dense_batch(h_t, batch_t, fill_value=float('-inf'))
+        h_s, s_mask = to_dense_batch(h_s, batch_s, fill_value=float('inf'))
+        h_t, t_mask = to_dense_batch(h_t, batch_t, fill_value=float('-inf'))
 
         assert h_s.size(0) == h_t.size(0), 'Encountered unequal batch-sizes'
         (B, N_s, F), N_t, R = h_s.size(), h_s.size(1), self.psi_2.in_channels
@@ -124,7 +142,7 @@ class DGMC(torch.nn.Module):
         if self.k < 1:
             # ------ Dense variant ------ #
             S_hat = h_s @ h_t.transpose(-1, -2)  # [B, N_s, N_t, F]
-            S_mask = h_s_mask.view(B, N_s, 1) & h_t_mask.view(B, 1, N_t)
+            S_mask = s_mask.view(B, N_s, 1) & t_mask.view(B, 1, N_t)
             S_0 = masked_softmax(S_hat, S_mask, dim=-1)
 
             for _ in range(self.num_steps):
@@ -133,10 +151,10 @@ class DGMC(torch.nn.Module):
                                   device=h_s.device)
                 r_t = S.transpose(-1, -2) @ r_s
 
-                r_s, r_t = to_sparse(r_s, h_s_mask), to_sparse(r_t, h_t_mask)
+                r_s, r_t = to_sparse(r_s, s_mask), to_sparse(r_t, t_mask)
                 o_s = self.psi_2(r_s, edge_index_s, edge_attr_s)
                 o_t = self.psi_2(r_t, edge_index_t, edge_attr_t)
-                o_s, o_t = to_dense(o_s, h_s_mask), to_dense(o_t, h_t_mask)
+                o_s, o_t = to_dense(o_s, s_mask), to_dense(o_t, t_mask)
 
                 D = o_s.view(B, N_s, 1, R) - o_t.view(B, 1, N_t, R)
                 S_hat = S_hat + self.mlp(D).squeeze(-1).masked_fill(~S_mask, 0)
@@ -147,9 +165,11 @@ class DGMC(torch.nn.Module):
         else:
             # ------ Sparse variant ------ #
             S_idx = self.__top_k__(h_s, h_t)  # [B, N_s, k]
+
+            # Append ground-truth values to the index tensor.
             if self.training and y is not None:
-                # TODO: Include gt as index
-                pass
+                S_idx = self.__append_gt__(S_idx, s_mask, y)
+
             tmp_s = h_s.view(B, N_s, 1, F)
             tmp_t = h_t.view(B, 1, N_t, F).expand(-1, N_s, -1, -1)
             idx = S_idx.view(B, N_s, self.k, 1).expand(-1, -1, -1, F)
@@ -166,10 +186,10 @@ class DGMC(torch.nn.Module):
                 idx = S_idx.view(B, N_s * self.k, 1)
                 r_t = scatter_add(tmp_t, idx, dim=1, dim_size=N_t)
 
-                r_s, r_t = to_sparse(r_s, h_s_mask), to_sparse(r_t, h_t_mask)
+                r_s, r_t = to_sparse(r_s, s_mask), to_sparse(r_t, t_mask)
                 o_s = self.psi_2(r_s, edge_index_s, edge_attr_s)
                 o_t = self.psi_2(r_t, edge_index_t, edge_attr_t)
-                o_s, o_t = to_dense(o_s, h_s_mask), to_dense(o_t, h_t_mask)
+                o_s, o_t = to_dense(o_s, s_mask), to_dense(o_t, t_mask)
 
                 o_t = o_t.view(B, 1, N_t, R).expand(-1, N_s, -1, -1)
                 idx = S_idx.view(B, N_s, self.k, 1).expand(-1, -1, -1, R)
