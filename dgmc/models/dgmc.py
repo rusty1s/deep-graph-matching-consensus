@@ -26,7 +26,7 @@ def to_dense(x, mask):
 
 
 class DGMC(torch.nn.Module):
-    r"""The Deep Graph Matching Conensus module which first matches nodes
+    r"""The Deep Graph Matching Consensus module which first matches nodes
     locally via a graph neural network :math:`\Psi_{\theta_1}`, and then
     updates correspondence scores iteratively by reaching for neighborhood
     consensus via a second graph neural network :math:`\Psi_{\theta_2}`.
