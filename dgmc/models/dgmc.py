@@ -5,6 +5,8 @@ from torch_geometric.utils import to_dense_batch
 from torch_geometric.nn.inits import reset
 from pykeops.torch import LazyTensor
 
+EPS = 1e-8
+
 
 def masked_softmax(src, mask, dim=-1):
     out = src.masked_fill(~mask, float('-inf'))
@@ -101,37 +103,35 @@ class DGMC(torch.nn.Module):
         r"""
         Args:
             x_s (Tensor): Source graph node features of shape
-                :obj:`[num_nodes, F]`.
+                :obj:`[batch_size * num_nodes, F]`.
             edge_index_s (LongTensor): Source graph edge connectivity of shape
                 :obj:`[2, num_edges]`.
             edge_attr_s (Tensor): Source graph edge features of shape
                 :obj:`[num_edges, D]`. Can be :obj:`None`.
             batch_s (LongTensor): Source graph batch vector of shape
-                :obj:`[num_nodes]` indicating node to graph assignment. Can
-                be :obj:`None` in case operating on single graphs.
+                :obj:`[batch_size * num_nodes]` indicating node to graph
+                assignment. Can be :obj:`None` in case operating on single
+                graphs.
             x_t (Tensor): Target graph node features of shape
-                :obj:`[num_nodes, F]`.
+                :obj:`[batch_size * num_nodes, F]`.
             edge_index_t (LongTensor): Target graph edge connectivity of shape
                 :obj:`[2, num_edges]`.
             edge_attr_t (Tensor): Target graph edge features of shape
                 :obj:`[num_edges, D]`. Can be :obj:`None`.
             batch_t (LongTensor): Target graph batch vector of shape
-                :obj:`[num_nodes]` indicating node to graph assignment. Can
-                be :obj:`None` in case operating on single graphs.
+                :obj:`[batch_size * num_nodes]` indicating node to graph
+                assignment. Can be :obj:`None` in case operating on single
+                graphs.
             y (LongTensor, optional): Ground-truth matchings of shape
                 :obj:`[2, num_ground_truths]` to include ground-truth values
                 when training against sparse correspondences. Ground-truths
                 are only used in case the model is in training mode.
                 (default: :obj:`None`)
 
-        Returns (if :obj:`k < 1`):
-            Initial and refined correspondence matrices :obj:`(S_0, S_L)` of
-            shapes :obj:`[batch_size, num_nodes, num_nodes]`.
-
-        Returns (if :obj:`k >= 1`):
-            Initial and refined sparse correspondence matrices
-            :obj:`(S_0, S_L, S_idx)` including the corresponding index tensor
-            of shapes :obj:`[batch_size, num_nodes, k]`.
+        Returns:
+            Initial and refined correspondence matrices :obj:`(S_0, S_L)`
+            of shapes :obj:`[batch_size * num_nodes, num_nodes]`. The
+            correspondence matrix are either given as dense or sparse matrices.
         """
         h_s = self.psi_1(x_s, edge_index_s, edge_attr_s)
         h_t = self.psi_1(x_t, edge_index_t, edge_attr_t)
@@ -148,7 +148,7 @@ class DGMC(torch.nn.Module):
             # ------ Dense variant ------ #
             S_hat = h_s @ h_t.transpose(-1, -2)  # [B, N_s, N_t, F]
             S_mask = s_mask.view(B, N_s, 1) & t_mask.view(B, 1, N_t)
-            S_0 = masked_softmax(S_hat, S_mask, dim=-1)
+            S_0 = masked_softmax(S_hat, S_mask, dim=-1)[s_mask]
 
             for _ in range(self.num_steps):
                 S = masked_softmax(S_hat, S_mask, dim=-1)
@@ -164,7 +164,7 @@ class DGMC(torch.nn.Module):
                 D = o_s.view(B, N_s, 1, R) - o_t.view(B, 1, N_t, R)
                 S_hat = S_hat + self.mlp(D).squeeze(-1).masked_fill(~S_mask, 0)
 
-            S_L = masked_softmax(S_hat, S_mask, dim=-1)
+            S_L = masked_softmax(S_hat, S_mask, dim=-1)[s_mask]
 
             return S_0, S_L
         else:
@@ -178,7 +178,7 @@ class DGMC(torch.nn.Module):
             tmp_t = h_t.view(B, 1, N_t, F).expand(-1, N_s, -1, -1)
             idx = S_idx.view(B, N_s, self.k, 1).expand(-1, -1, -1, F)
             S_hat = (tmp_s * torch.gather(tmp_t, -2, idx)).sum(dim=-1)
-            S_0 = S_hat.softmax(dim=-1)
+            S_0 = S_hat.softmax(dim=-1)[s_mask]
 
             for _ in range(self.num_steps):
                 S = S_hat.softmax(dim=-1)
@@ -200,9 +200,83 @@ class DGMC(torch.nn.Module):
                 D = o_s.view(B, N_s, 1, R) - torch.gather(o_t, -2, idx)
                 S_hat = S_hat + self.mlp(D).squeeze(-1)
 
-            S_L = S_hat.softmax(dim=-1)
+            S_L = S_hat.softmax(dim=-1)[s_mask]
+            S_idx = S_idx[s_mask]
 
-            return S_0, S_L, S_idx
+            # Convert sparse layout to `torch.sparse_coo_tensor`.
+            row = torch.arange(x_s.size(0), device=S_idx.device)
+            row = row.view(-1, 1).repeat(1, self.k)
+            idx = torch.stack([row.view(-1), S_idx.view(-1)], dim=0)
+            size = torch.Size([x_s.size(0), N_t])
+
+            S_sparse_0 = torch.sparse_coo_tensor(
+                idx, S_0.view(-1), size, requires_grad=S_0.requires_grad)
+            S_sparse_0.__idx__ = S_idx
+            S_sparse_0.__val__ = S_0
+
+            S_sparse_L = torch.sparse_coo_tensor(
+                idx, S_L.view(-1), size, requires_grad=S_L.requires_grad)
+            S_sparse_L.__idx__ = S_idx
+            S_sparse_L.__val__ = S_L
+
+            return S_sparse_0, S_sparse_L
+
+    def loss(self, S, y):
+        r"""Computes the negative log-likelihood loss on the correspondence
+        matrix.
+
+        Args:
+            S (Tensor): Sparse or dense correspondence matrix of shape
+                :obj:`[batch_size * num_nodes, num_nodes]`.
+            y (LongTensor): Ground-truth matchings of shape
+                :obj:`[2, num_ground_truths]`.
+        """
+        if not S.is_sparse:
+            val = S[y[0], y[1]]
+        else:
+            assert S.__idx__ is not None and S.__val__ is not None
+            mask = S.__idx__[y[0]] == y[1].view(-1, 1)
+            val = S.__val__[[y[0]]][mask]
+        return -torch.log(val + EPS).mean()
+
+    def acc(self, S, y):
+        r"""Computes the accuracy of correspondence predictions.
+
+        Args:
+            S (Tensor): Sparse or dense correspondence matrix of shape
+                :obj:`[batch_size * num_nodes, num_nodes]`.
+            y (LongTensor): Ground-truth matchings of shape
+                :obj:`[2, num_ground_truths]`.
+        """
+        if not S.is_sparse:
+            pred = S[y[0]].argmax(dim=-1)
+        else:
+            assert S.__idx__ is not None and S.__val__ is not None
+            pred = S.__idx__[y[0], S.__val__[y[0]].argmax(dim=-1)]
+
+        correct = (pred == y[1]).sum().item()
+        return correct / y.size(1)
+
+    def hits_at(self, k, S, y):
+        r"""Computes the Hits@k of correspondence predictions.
+
+        Args:
+            k (int): The top-k predictions to consider.
+            S (Tensor): Sparse or dense correspondence matrix of shape
+                :obj:`[batch_size * num_nodes, num_nodes]`.
+            y (LongTensor): Ground-truth matchings of shape
+                :obj:`[2, num_ground_truths]`.
+        """
+        if not S.is_sparse:
+            pred = S[y[0]].argsort(dim=-1, descending=True)[:, :k]
+        else:
+            assert S.__idx__ is not None and S.__val__ is not None
+            perm = S.__val__[y[0]].argsort(dim=-1, descending=True)[:, :k]
+            pred = S.__idx__.new_empty((y.size(1), k))
+            pred = pred.scatter_(-1, perm, S.__idx__[y[0]])
+
+        correct = (pred == y[1].view(-1, 1)).sum().item()
+        return correct / y.size(1)
 
     def __repr__(self):
         return ('{}(\n'

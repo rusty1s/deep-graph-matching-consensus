@@ -2,14 +2,19 @@ import torch
 from dgmc.models import DGMC, GIN
 
 from torch_geometric.datasets import KarateClub
+from torch_geometric.data import Batch
 
 data = KarateClub()[0]
-x, e, N = data.x, data.edge_index, data.num_nodes
+N = data.num_nodes
 psi_1 = GIN(data.num_node_features, 16, num_layers=2)
 psi_2 = GIN(8, 8, num_layers=2, batch_norm=False)
 
 
-def test_dgmc():
+def set_seed():
+    torch.manual_seed(12345)
+
+
+def test_dgmc_repr():
     model = DGMC(psi_1, psi_2, num_steps=1)
     assert model.__repr__() == (
         'DGMC(\n'
@@ -19,18 +24,64 @@ def test_dgmc():
         'lin=True),\n'
         '    num_steps=1, k=-1\n)')
 
-    torch.manual_seed(12345)
-    S1_0, S1_L = model(x, e, None, None, x, e, None, None)
-    model.k = data.num_nodes  # Test a sparse "dense" variant.
-    torch.manual_seed(12345)
+
+def test_dgmc_on_single_graphs():
+    set_seed()
+    model = DGMC(psi_1, psi_2, num_steps=1)
+    x, e = data.x, data.edge_index
     y = torch.stack([torch.arange(N), torch.arange(N)], dim=0)
-    S2_0, S2_L, S2_idx = model(x, e, None, None, x, e, None, None, y)
 
-    assert torch.allclose(torch.gather(S1_0, -1, S2_idx), S2_0)
-    assert torch.allclose(torch.gather(S1_L, -1, S2_idx), S2_L)
+    set_seed()
+    S1_0, S1_L = model(x, e, None, None, x, e, None, None)
+    loss1 = model.loss(S1_0, y)
+    loss1.backward()
+    acc1 = model.acc(S1_0, y)
+    hits1_1 = model.hits_at(1, S1_0, y)
+    hits1_10 = model.hits_at(10, S1_0, y)
+    hits1_all = model.hits_at(data.num_nodes, S1_0, y)
+
+    set_seed()
+    model.k = data.num_nodes  # Test a sparse "dense" variant.
+    y = torch.stack([torch.arange(N), torch.arange(N)], dim=0)
+    S2_0, S2_L = model(x, e, None, None, x, e, None, None, y)
+    loss2 = model.loss(S2_0, y)
+    loss2.backward()
+    acc2 = model.acc(S2_0, y)
+    hits2_1 = model.hits_at(1, S1_0, y)
+    hits2_10 = model.hits_at(10, S1_0, y)
+    hits2_all = model.hits_at(data.num_nodes, S1_0, y)
+
+    assert S1_0.size() == (data.num_nodes, data.num_nodes)
+    assert S1_L.size() == (data.num_nodes, data.num_nodes)
+    assert torch.allclose(S1_0, S2_0.to_dense())
+    assert torch.allclose(S1_L, S2_L.to_dense())
+    assert torch.allclose(loss1, loss2)
+    assert acc1 == acc2 == hits1_1 == hits2_1
+    assert hits1_1 <= hits1_10 == hits2_10 <= hits1_all
+    assert hits1_all == hits2_all == 1.0
 
 
-def test_append_gt():
+def test_dgmc_on_multiple_graphs():
+    set_seed()
+    model = DGMC(psi_1, psi_2, num_steps=1)
+
+    batch = Batch.from_data_list([data, data])
+    x, e, b = batch.x, batch.edge_index, batch.batch
+
+    set_seed()
+    S1_0, S1_L = model(x, e, None, b, x, e, None, b)
+    assert S1_0.size() == (batch.num_nodes, data.num_nodes)
+    assert S1_L.size() == (batch.num_nodes, data.num_nodes)
+
+    set_seed()
+    model.k = data.num_nodes  # Test a sparse "dense" variant.
+    S2_0, S2_L = model(x, e, None, b, x, e, None, b)
+
+    assert torch.allclose(S1_0, S2_0.to_dense())
+    assert torch.allclose(S1_L, S2_L.to_dense())
+
+
+def test_dgmc_append_gt():
     model = DGMC(psi_1, psi_2, num_steps=1)
 
     S_idx = torch.tensor([[[0, 1], [1, 2]], [[1, 2], [0, 1]]])
