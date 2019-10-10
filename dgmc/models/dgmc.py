@@ -78,7 +78,7 @@ class DGMC(torch.nn.Module):
         r"""Memory-efficient top-k correspondence computation."""
         x_s, x_t = LazyTensor(x_s.unsqueeze(-2)), LazyTensor(x_t.unsqueeze(-3))
         S_ij = (-x_s * x_t).sum(dim=-1)
-        return S_ij.argKmin(self.k, dim=1, backend=self.backend)
+        return S_ij.argKmin(self.k, dim=2, backend=self.backend)
 
     def __append_gt__(self, S_idx, s_mask, y):
         r"""Appends the ground-truth values in :obj:`y` to the index tensor
@@ -142,7 +142,7 @@ class DGMC(torch.nn.Module):
         h_t, t_mask = to_dense_batch(h_t, batch_t, fill_value=float('-inf'))
 
         assert h_s.size(0) == h_t.size(0), 'Encountered unequal batch-sizes'
-        (B, N_s, F), N_t, R = h_s.size(), h_s.size(1), self.psi_2.in_channels
+        (B, N_s, F), N_t, R = h_s.size(), h_t.size(1), self.psi_2.in_channels
 
         if self.k < 1:
             # ------ Dense variant ------ #
@@ -175,9 +175,9 @@ class DGMC(torch.nn.Module):
                 S_idx = self.__append_gt__(S_idx, s_mask, y)
 
             tmp_s = h_s.view(B, N_s, 1, F)
-            tmp_t = h_t.view(B, 1, N_t, F).expand(-1, N_s, -1, -1)
-            idx = S_idx.view(B, N_s, self.k, 1).expand(-1, -1, -1, F)
-            S_hat = (tmp_s * torch.gather(tmp_t, -2, idx)).sum(dim=-1)
+            idx = S_idx.view(B, N_s * self.k, 1).expand(-1, -1, F)
+            tmp_t = torch.gather(h_t.view(B, N_t, F), -2, idx)
+            S_hat = (tmp_s * tmp_t.view(B, N_s, self.k, F)).sum(dim=-1)
             S_0 = S_hat.softmax(dim=-1)[s_mask]
 
             for _ in range(self.num_steps):
@@ -272,8 +272,7 @@ class DGMC(torch.nn.Module):
         else:
             assert S.__idx__ is not None and S.__val__ is not None
             perm = S.__val__[y[0]].argsort(dim=-1, descending=True)[:, :k]
-            pred = S.__idx__.new_empty((y.size(1), k))
-            pred = pred.scatter_(-1, perm, S.__idx__[y[0]])
+            pred = torch.gather(S.__idx__[y[0]], -1, perm)
 
         correct = (pred == y[1].view(-1, 1)).sum().item()
         return correct / y.size(1)
