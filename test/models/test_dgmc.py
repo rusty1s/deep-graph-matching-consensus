@@ -3,15 +3,13 @@ from dgmc.models import DGMC, GIN
 
 from torch_geometric.datasets import KarateClub
 
+data = KarateClub()[0]
+x, e, N = data.x, data.edge_index, data.num_nodes
+psi_1 = GIN(data.num_node_features, 16, num_layers=2)
+psi_2 = GIN(8, 8, num_layers=2, batch_norm=False)
+
 
 def test_dgmc():
-    data = KarateClub()[0]
-    x, e, N = data.x, data.edge_index, data.num_nodes
-
-    psi_1 = GIN(data.num_node_features, 16, num_layers=2)
-
-    psi_2 = GIN(8, 8, num_layers=2, batch_norm=False)
-
     model = DGMC(psi_1, psi_2, num_steps=1)
     assert model.__repr__() == (
         'DGMC(\n'
@@ -30,6 +28,10 @@ def test_dgmc():
 
     assert torch.allclose(torch.gather(S1_0, -1, S2_idx), S2_0)
     assert torch.allclose(torch.gather(S1_L, -1, S2_idx), S2_L)
+
+
+def test_append_gt():
+    model = DGMC(psi_1, psi_2, num_steps=1)
 
     S_idx = torch.tensor([[[0, 1], [1, 2]], [[1, 2], [0, 1]]])
     s_mask = torch.tensor([[True, False], [True, True]])

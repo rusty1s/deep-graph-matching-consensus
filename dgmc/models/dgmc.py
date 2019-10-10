@@ -32,20 +32,22 @@ class DGMC(torch.nn.Module):
     Args:
         psi_1 (torch.nn.Module): The first GNN :math:`\Psi_{\theta_1}` which
             takes in node features :obj:`x`, edge connectivity :`edge_index`,
-            and optional edge features :`edge_attr`.
+            and optional edge features :`edge_attr` and computes node
+            embeddings.
         psi_2 (torch.nn.Module): The second GNN :math:`\Psi_{\theta_2}` which
             takes in node features :obj:`x`, edge connectivity :`edge_index`,
-            and optional edge features :`edge_attr`.
+            and optional edge features :`edge_attr` and validates for
+            neighborhood consensus.
             :obj:`psi_2` needs to hold the attributes :obj:`in_channels` and
             :obj:`out_channels` indicating the dimensionality of randomly drawn
             node indicator functions and the output dimensionality of
-            :obj:`psi_2` respectively.
+            :obj:`psi_2`, respectively.
         num_steps (int): Number of consensus iterations.
-        k (int, optional): The sparsity parameter. If set to :obj:`-1`, will
+        k (int, optional): Sparsity parameter. If set to :obj:`-1`, will
             not sparsify initial correspondence rankings. (default: :obj:`-1`)
         detach (bool, optional): If set to :obj:`True`, will detach the
-            computation of :math:`\Psi_{\theta_1}` from the current graph.
-            (default: :obj:`False`)
+            computation of :math:`\Psi_{\theta_1}` from the current computation
+            graph. (default: :obj:`False`)
     """
     def __init__(self, psi_1, psi_2, num_steps, k=-1, detach=False):
         super(DGMC, self).__init__()
@@ -71,6 +73,7 @@ class DGMC(torch.nn.Module):
         reset(self.mlp)
 
     def __top_k__(self, x_s, x_t):
+        r"""Memory-efficient top-k correspondence computation."""
         x_s, x_t = LazyTensor(x_s.unsqueeze(-2)), LazyTensor(x_t.unsqueeze(-3))
         S_ij = (-x_s * x_t).sum(dim=-1)
         return S_ij.argKmin(self.k, dim=1, backend=self.backend)
