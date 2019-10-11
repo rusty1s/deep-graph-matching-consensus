@@ -67,8 +67,6 @@ class DGMC(torch.nn.Module):
             Lin(psi_2.out_channels, 1),
         )
 
-        self.reset_parameters()
-
     def reset_parameters(self):
         self.psi_1.reset_parameters()
         self.psi_2.reset_parameters()
@@ -239,7 +237,7 @@ class DGMC(torch.nn.Module):
             val = S.__val__[[y[0]]][mask]
         return -torch.log(val + EPS).mean()
 
-    def acc(self, S, y):
+    def acc(self, S, y, norm=True):
         r"""Computes the accuracy of correspondence predictions.
 
         Args:
@@ -247,6 +245,8 @@ class DGMC(torch.nn.Module):
                 :obj:`[batch_size * num_nodes, num_nodes]`.
             y (LongTensor): Ground-truth matchings of shape
                 :obj:`[2, num_ground_truths]`.
+            norm (bool, optional): If set to :obj:`False`, will output the
+                absolute amount of correct predictions.
         """
         if not S.is_sparse:
             pred = S[y[0]].argmax(dim=-1)
@@ -255,9 +255,9 @@ class DGMC(torch.nn.Module):
             pred = S.__idx__[y[0], S.__val__[y[0]].argmax(dim=-1)]
 
         correct = (pred == y[1]).sum().item()
-        return correct / y.size(1)
+        return correct / y.size(1) if norm else correct
 
-    def hits_at(self, k, S, y):
+    def hits_at(self, k, S, y, norm=True):
         r"""Computes the Hits@k of correspondence predictions.
 
         Args:
@@ -266,6 +266,8 @@ class DGMC(torch.nn.Module):
                 :obj:`[batch_size * num_nodes, num_nodes]`.
             y (LongTensor): Ground-truth matchings of shape
                 :obj:`[2, num_ground_truths]`.
+            norm (bool, optional): If set to :obj:`False`, will output the
+                absolute amount of correct predictions.
         """
         if not S.is_sparse:
             pred = S[y[0]].argsort(dim=-1, descending=True)[:, :k]
@@ -275,7 +277,7 @@ class DGMC(torch.nn.Module):
             pred = torch.gather(S.__idx__[y[0]], -1, perm)
 
         correct = (pred == y[1].view(-1, 1)).sum().item()
-        return correct / y.size(1)
+        return correct / y.size(1) if norm else correct
 
     def __repr__(self):
         return ('{}(\n'

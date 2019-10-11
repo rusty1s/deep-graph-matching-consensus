@@ -3,6 +3,7 @@ _ext/
 build/
 dist/
 .cache/
+data/
 .eggs/
 *.egg-info/
 .coverage
