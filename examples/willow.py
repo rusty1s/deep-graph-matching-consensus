@@ -5,6 +5,7 @@ import torch
 import torch_geometric.transforms as T
 from torch_geometric.datasets import WILLOWObjectClass
 from torch_geometric.data import DataLoader, Batch
+
 from dgmc.models import DGMC, SplineCNN
 
 parser = argparse.ArgumentParser()
@@ -21,15 +22,16 @@ parser.add_argument('--runs', type=int, default=20)
 args = parser.parse_args()
 args.cartesian = True if args.cartesian == 'True' else False
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data', 'WILLOW')
-dataset = WILLOWObjectClass(path, category=args.category)
-dataset.transform = T.Compose([
+transform = T.Compose([
     T.Delaunay(),
     T.FaceToEdge(),
     T.Cartesian() if args.cartesian else T.Distance(),
 ])
 
+path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data', 'WILLOW')
+dataset = WILLOWObjectClass(path, args.category, transform=transform)
+
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 psi_1 = SplineCNN(dataset.num_node_features, args.dim,
                   dataset.num_edge_features, args.num_layers, cat=False,
                   dropout=0.5)

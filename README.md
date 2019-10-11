@@ -27,6 +27,8 @@ We provide training and evaluation procedures for the [WILLOW-ObjectClass](https
 ```
 $ cd examples/
 $ python willow.py --category=Duck
+$ python pascal.py --category=Aeroplane
+$ python dbp15k.py --category=zh_en
 ```
 
 <p align="center">

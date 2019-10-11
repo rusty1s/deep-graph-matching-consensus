@@ -136,11 +136,12 @@ class DGMC(torch.nn.Module):
 
         h_s, h_t = (h_s.detach(), h_t.detach()) if self.detach else (h_s, h_t)
 
-        h_s, s_mask = to_dense_batch(h_s, batch_s, fill_value=float('inf'))
-        h_t, t_mask = to_dense_batch(h_t, batch_t, fill_value=float('-inf'))
+        h_s, s_mask = to_dense_batch(h_s, batch_s, fill_value=0)
+        h_t, t_mask = to_dense_batch(h_t, batch_t, fill_value=0)
 
         assert h_s.size(0) == h_t.size(0), 'Encountered unequal batch-sizes'
-        (B, N_s, F), N_t, R = h_s.size(), h_t.size(1), self.psi_2.in_channels
+        (B, N_s, F), N_t = h_s.size(), h_t.size(1)
+        R_in, R_out = self.psi_2.in_channels, self.psi_2.out_channels
 
         if self.k < 1:
             # ------ Dense variant ------ #
@@ -150,7 +151,7 @@ class DGMC(torch.nn.Module):
 
             for _ in range(self.num_steps):
                 S = masked_softmax(S_hat, S_mask, dim=-1)
-                r_s = torch.randn((B, N_s, R), dtype=h_s.dtype,
+                r_s = torch.randn((B, N_s, R_in), dtype=h_s.dtype,
                                   device=h_s.device)
                 r_t = S.transpose(-1, -2) @ r_s
 
@@ -159,7 +160,7 @@ class DGMC(torch.nn.Module):
                 o_t = self.psi_2(r_t, edge_index_t, edge_attr_t)
                 o_s, o_t = to_dense(o_s, s_mask), to_dense(o_t, t_mask)
 
-                D = o_s.view(B, N_s, 1, R) - o_t.view(B, 1, N_t, R)
+                D = o_s.view(B, N_s, 1, R_out) - o_t.view(B, 1, N_t, R_out)
                 S_hat = S_hat + self.mlp(D).squeeze(-1).masked_fill(~S_mask, 0)
 
             S_L = masked_softmax(S_hat, S_mask, dim=-1)[s_mask]
@@ -180,11 +181,11 @@ class DGMC(torch.nn.Module):
 
             for _ in range(self.num_steps):
                 S = S_hat.softmax(dim=-1)
-                r_s = torch.randn((B, N_s, R), dtype=h_s.dtype,
+                r_s = torch.randn((B, N_s, R_in), dtype=h_s.dtype,
                                   device=h_s.device)
 
-                tmp_t = r_s.view(B, N_s, 1, R) * S.view(B, N_s, self.k, 1)
-                tmp_t = tmp_t.view(B, N_s * self.k, R)
+                tmp_t = r_s.view(B, N_s, 1, R_in) * S.view(B, N_s, self.k, 1)
+                tmp_t = tmp_t.view(B, N_s * self.k, R_in)
                 idx = S_idx.view(B, N_s * self.k, 1)
                 r_t = scatter_add(tmp_t, idx, dim=1, dim_size=N_t)
 
@@ -193,9 +194,9 @@ class DGMC(torch.nn.Module):
                 o_t = self.psi_2(r_t, edge_index_t, edge_attr_t)
                 o_s, o_t = to_dense(o_s, s_mask), to_dense(o_t, t_mask)
 
-                o_t = o_t.view(B, 1, N_t, R).expand(-1, N_s, -1, -1)
-                idx = S_idx.view(B, N_s, self.k, 1).expand(-1, -1, -1, R)
-                D = o_s.view(B, N_s, 1, R) - torch.gather(o_t, -2, idx)
+                o_t = o_t.view(B, 1, N_t, R_out).expand(-1, N_s, -1, -1)
+                idx = S_idx.view(B, N_s, self.k, 1).expand(-1, -1, -1, R_out)
+                D = o_s.view(B, N_s, 1, R_out) - torch.gather(o_t, -2, idx)
                 S_hat = S_hat + self.mlp(D).squeeze(-1)
 
             S_L = S_hat.softmax(dim=-1)[s_mask]
