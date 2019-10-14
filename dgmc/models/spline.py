@@ -42,6 +42,7 @@ class SplineCNN(torch.nn.Module):
             self.final.reset_parameters()
 
     def forward(self, x, edge_index, edge_attr, *args):
+        """"""
         xs = [x]
 
         for conv in self.convs:

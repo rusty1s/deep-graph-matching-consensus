@@ -23,6 +23,7 @@ class RelConv(MessagePassing):
         self.root.reset_parameters()
 
     def forward(self, x, edge_index):
+        """"""
         self.flow = 'source_to_target'
         out1 = self.propagate(edge_index, x=self.lin1(x))
         self.flow = 'target_to_source'
@@ -77,6 +78,7 @@ class RelCNN(torch.nn.Module):
             self.final.reset_parameters()
 
     def forward(self, x, edge_index, *args):
+        """"""
         xs = [x]
 
         for conv, batch_norm in zip(self.convs, self.batch_norms):

@@ -26,23 +26,23 @@ def to_dense(x, mask):
 
 
 class DGMC(torch.nn.Module):
-    r"""The Deep Graph Matching Consensus module which first matches nodes
+    r"""The *Deep Graph Matching Consensus* module which first matches nodes
     locally via a graph neural network :math:`\Psi_{\theta_1}`, and then
     updates correspondence scores iteratively by reaching for neighborhood
     consensus via a second graph neural network :math:`\Psi_{\theta_2}`.
 
     Args:
         psi_1 (torch.nn.Module): The first GNN :math:`\Psi_{\theta_1}` which
-            takes in node features :obj:`x`, edge connectivity :`edge_index`,
-            and optional edge features :`edge_attr` and computes node
-            embeddings.
+            takes in node features :obj:`x`, edge connectivity
+            :obj:`edge_index`, and optional edge features :obj:`edge_attr` and
+            computes node embeddings.
         psi_2 (torch.nn.Module): The second GNN :math:`\Psi_{\theta_2}` which
-            takes in node features :obj:`x`, edge connectivity :`edge_index`,
-            and optional edge features :`edge_attr` and validates for
-            neighborhood consensus.
+            takes in node features :obj:`x`, edge connectivity
+            :obj:`edge_index`, and optional edge features :obj:`edge_attr` and
+            validates for neighborhood consensus.
             :obj:`psi_2` needs to hold the attributes :obj:`in_channels` and
-            :obj:`out_channels` indicating the dimensionality of randomly drawn
-            node indicator functions and the output dimensionality of
+            :obj:`out_channels` which indicates the dimensionality of randomly
+            drawn node indicator functions and the output dimensionality of
             :obj:`psi_2`, respectively.
         num_steps (int): Number of consensus iterations.
         k (int, optional): Sparsity parameter. If set to :obj:`-1`, will
@@ -105,21 +105,21 @@ class DGMC(torch.nn.Module):
             edge_index_s (LongTensor): Source graph edge connectivity of shape
                 :obj:`[2, num_edges]`.
             edge_attr_s (Tensor): Source graph edge features of shape
-                :obj:`[num_edges, D]`. Can be :obj:`None`.
+                :obj:`[num_edges, D]`. Set to :obj:`None` if the GNNs are not
+                taking edge features into account.
             batch_s (LongTensor): Source graph batch vector of shape
                 :obj:`[batch_size * num_nodes]` indicating node to graph
-                assignment. Can be :obj:`None` in case operating on single
-                graphs.
+                assignment. Set to :obj:`None` if operating on single graphs.
             x_t (Tensor): Target graph node features of shape
                 :obj:`[batch_size * num_nodes, C_in]`.
             edge_index_t (LongTensor): Target graph edge connectivity of shape
                 :obj:`[2, num_edges]`.
             edge_attr_t (Tensor): Target graph edge features of shape
-                :obj:`[num_edges, D]`. Can be :obj:`None`.
-            batch_t (LongTensor): Target graph batch vector of shape
+                :obj:`[num_edges, D]`. Set to :obj:`None` if the GNNs are not
+                taking edge features into account.
+            batch_s (LongTensor): Target graph batch vector of shape
                 :obj:`[batch_size * num_nodes]` indicating node to graph
-                assignment. Can be :obj:`None` in case operating on single
-                graphs.
+                assignment. Set to :obj:`None` if operating on single graphs.
             y (LongTensor, optional): Ground-truth matchings of shape
                 :obj:`[2, num_ground_truths]` to include ground-truth values
                 when training against sparse correspondences. Ground-truths
@@ -220,7 +220,7 @@ class DGMC(torch.nn.Module):
 
             return S_sparse_0, S_sparse_L
 
-    def loss(self, S, y):
+    def loss(self, S, y, reduction='mean'):
         r"""Computes the negative log-likelihood loss on the correspondence
         matrix.
 
@@ -229,16 +229,21 @@ class DGMC(torch.nn.Module):
                 :obj:`[batch_size * num_nodes, num_nodes]`.
             y (LongTensor): Ground-truth matchings of shape
                 :obj:`[2, num_ground_truths]`.
+            reduction (string, optional): Specifies the reduction to apply to
+                the output: :obj:`'none'|'mean'|'sum'`.
+                (default: :obj:`'mean'`)
         """
+        assert reduction in ['none', 'mean', 'sum']
         if not S.is_sparse:
             val = S[y[0], y[1]]
         else:
             assert S.__idx__ is not None and S.__val__ is not None
             mask = S.__idx__[y[0]] == y[1].view(-1, 1)
             val = S.__val__[[y[0]]][mask]
-        return -torch.log(val + EPS).mean()
+        nll = -torch.log(val + EPS)
+        return nll if reduction == 'none' else getattr(torch, reduction)(nll)
 
-    def acc(self, S, y, norm=True):
+    def acc(self, S, y, reduction='mean'):
         r"""Computes the accuracy of correspondence predictions.
 
         Args:
@@ -246,9 +251,10 @@ class DGMC(torch.nn.Module):
                 :obj:`[batch_size * num_nodes, num_nodes]`.
             y (LongTensor): Ground-truth matchings of shape
                 :obj:`[2, num_ground_truths]`.
-            norm (bool, optional): If set to :obj:`False`, will output the
-                absolute amount of correct predictions.
+            reduction (string, optional): Specifies the reduction to apply to
+                the output: :obj:`'mean'|'sum'`. (default: :obj:`'mean'`)
         """
+        assert reduction in ['mean', 'sum']
         if not S.is_sparse:
             pred = S[y[0]].argmax(dim=-1)
         else:
@@ -256,20 +262,21 @@ class DGMC(torch.nn.Module):
             pred = S.__idx__[y[0], S.__val__[y[0]].argmax(dim=-1)]
 
         correct = (pred == y[1]).sum().item()
-        return correct / y.size(1) if norm else correct
+        return correct / y.size(1) if reduction == 'mean' else correct
 
-    def hits_at(self, k, S, y, norm=True):
+    def hits_at_k(self, k, S, y, reduction='mean'):
         r"""Computes the Hits@k of correspondence predictions.
 
         Args:
-            k (int): The top-k predictions to consider.
+            k (int): The :math:`\mathrm{top}_k` predictions to consider.
             S (Tensor): Sparse or dense correspondence matrix of shape
                 :obj:`[batch_size * num_nodes, num_nodes]`.
             y (LongTensor): Ground-truth matchings of shape
                 :obj:`[2, num_ground_truths]`.
-            norm (bool, optional): If set to :obj:`False`, will output the
-                absolute amount of correct predictions.
+            reduction (string, optional): Specifies the reduction to apply to
+                the output: :obj:`'mean'|'sum'`. (default: :obj:`'mean'`)
         """
+        assert reduction in ['mean', 'sum']
         if not S.is_sparse:
             pred = S[y[0]].argsort(dim=-1, descending=True)[:, :k]
         else:
@@ -278,7 +285,7 @@ class DGMC(torch.nn.Module):
             pred = torch.gather(S.__idx__[y[0]], -1, perm)
 
         correct = (pred == y[1].view(-1, 1)).sum().item()
-        return correct / y.size(1) if norm else correct
+        return correct / y.size(1) if reduction == 'mean' else correct
 
     def __repr__(self):
         return ('{}(\n'

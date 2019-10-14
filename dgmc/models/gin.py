@@ -52,6 +52,7 @@ class GIN(torch.nn.Module):
             self.final.reset_parameters()
 
     def forward(self, x, edge_index, *args):
+        """"""
         xs = [x]
 
         for conv in self.convs:

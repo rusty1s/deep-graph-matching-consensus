@@ -36,9 +36,9 @@ def test_dgmc_on_single_graphs():
     loss1 = model.loss(S1_0, y)
     loss1.backward()
     acc1 = model.acc(S1_0, y)
-    hits1_1 = model.hits_at(1, S1_0, y)
-    hits1_10 = model.hits_at(10, S1_0, y)
-    hits1_all = model.hits_at(data.num_nodes, S1_0, y)
+    hits1_1 = model.hits_at_k(1, S1_0, y)
+    hits1_10 = model.hits_at_k(10, S1_0, y)
+    hits1_all = model.hits_at_k(data.num_nodes, S1_0, y)
 
     set_seed()
     model.k = data.num_nodes  # Test a sparse "dense" variant.
@@ -47,9 +47,9 @@ def test_dgmc_on_single_graphs():
     loss2 = model.loss(S2_0, y)
     loss2.backward()
     acc2 = model.acc(S2_0, y)
-    hits2_1 = model.hits_at(1, S2_0, y)
-    hits2_10 = model.hits_at(10, S2_0, y)
-    hits2_all = model.hits_at(data.num_nodes, S2_0, y)
+    hits2_1 = model.hits_at_k(1, S2_0, y)
+    hits2_10 = model.hits_at_k(10, S2_0, y)
+    hits2_all = model.hits_at_k(data.num_nodes, S2_0, y)
 
     assert S1_0.size() == (data.num_nodes, data.num_nodes)
     assert S1_L.size() == (data.num_nodes, data.num_nodes)
