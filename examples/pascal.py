@@ -90,7 +90,7 @@ def test():
                              data.x_s_batch, data.x_t, data.edge_index_t,
                              data.edge_attr_t, data.x_t_batch)
         y = generate_y(data.y)
-        correct += model.acc(S_L, y, norm=False)
+        correct += model.acc(S_L, y, reduction='sum')
         num_examples += y.size(1)
 
     return correct / num_examples

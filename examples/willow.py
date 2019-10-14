@@ -79,7 +79,7 @@ def test(test_dataset, train_loader):
                                data_s.batch, data_t.x, data_t.edge_index,
                                data_t.edge_attr, data_t.batch)
             y = generate_y(num_nodes=10, batch_size=data_t.num_graphs)
-            correct += model.acc(S_L, y, norm=False)
+            correct += model.acc(S_L, y, reduction='sum')
             num_examples += y.size(1)
 
     return correct / num_examples

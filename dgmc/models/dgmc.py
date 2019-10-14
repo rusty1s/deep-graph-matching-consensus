@@ -78,8 +78,8 @@ class DGMC(torch.nn.Module):
         S_ij = (-x_s * x_t).sum(dim=-1)
         return S_ij.argKmin(self.k, dim=2, backend=self.backend)
 
-    def __append_gt__(self, S_idx, s_mask, y):
-        r"""Appends the ground-truth values in :obj:`y` to the index tensor
+    def __include_gt__(self, S_idx, s_mask, y):
+        r"""Includes the ground-truth values in :obj:`y` to the index tensor
         :obj:`S_idx`."""
         (B, N_s), (row, col), k = s_mask.size(), y, S_idx.size(-1)
 
@@ -170,13 +170,17 @@ class DGMC(torch.nn.Module):
             # ------ Sparse variant ------ #
             S_idx = self.__top_k__(h_s, h_t)  # [B, N_s, k]
 
-            if self.training and y is not None:
-                S_idx = self.__append_gt__(S_idx, s_mask, y)
+            # In addition to the top-k, randomly sample negative examples and
+            # ensure that the ground-truth is included as a sparse entry.
+            if self.training and y is not None and self.num_steps > 0:
+                S_idx = torch.cat([S_idx, torch.randint_like(S_idx, N_t)], -1)
+                S_idx = self.__include_gt__(S_idx, s_mask, y)
 
+            k = S_idx.size(-1)
             tmp_s = h_s.view(B, N_s, 1, C_out)
-            idx = S_idx.view(B, N_s * self.k, 1).expand(-1, -1, C_out)
+            idx = S_idx.view(B, N_s * k, 1).expand(-1, -1, C_out)
             tmp_t = torch.gather(h_t.view(B, N_t, C_out), -2, idx)
-            S_hat = (tmp_s * tmp_t.view(B, N_s, self.k, C_out)).sum(dim=-1)
+            S_hat = (tmp_s * tmp_t.view(B, N_s, k, C_out)).sum(dim=-1)
             S_0 = S_hat.softmax(dim=-1)[s_mask]
 
             for _ in range(self.num_steps):
@@ -184,9 +188,9 @@ class DGMC(torch.nn.Module):
                 r_s = torch.randn((B, N_s, R_in), dtype=h_s.dtype,
                                   device=h_s.device)
 
-                tmp_t = r_s.view(B, N_s, 1, R_in) * S.view(B, N_s, self.k, 1)
-                tmp_t = tmp_t.view(B, N_s * self.k, R_in)
-                idx = S_idx.view(B, N_s * self.k, 1)
+                tmp_t = r_s.view(B, N_s, 1, R_in) * S.view(B, N_s, k, 1)
+                tmp_t = tmp_t.view(B, N_s * k, R_in)
+                idx = S_idx.view(B, N_s * k, 1)
                 r_t = scatter_add(tmp_t, idx, dim=1, dim_size=N_t)
 
                 r_s, r_t = to_sparse(r_s, s_mask), to_sparse(r_t, t_mask)
@@ -195,7 +199,7 @@ class DGMC(torch.nn.Module):
                 o_s, o_t = to_dense(o_s, s_mask), to_dense(o_t, t_mask)
 
                 o_t = o_t.view(B, 1, N_t, R_out).expand(-1, N_s, -1, -1)
-                idx = S_idx.view(B, N_s, self.k, 1).expand(-1, -1, -1, R_out)
+                idx = S_idx.view(B, N_s, k, 1).expand(-1, -1, -1, R_out)
                 D = o_s.view(B, N_s, 1, R_out) - torch.gather(o_t, -2, idx)
                 S_hat = S_hat + self.mlp(D).squeeze(-1)
 
@@ -204,7 +208,7 @@ class DGMC(torch.nn.Module):
 
             # Convert sparse layout to `torch.sparse_coo_tensor`.
             row = torch.arange(x_s.size(0), device=S_idx.device)
-            row = row.view(-1, 1).repeat(1, self.k)
+            row = row.view(-1, 1).repeat(1, k)
             idx = torch.stack([row.view(-1), S_idx.view(-1)], dim=0)
             size = torch.Size([x_s.size(0), N_t])
 

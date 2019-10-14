@@ -83,10 +83,9 @@ class RelCNN(torch.nn.Module):
 
         for conv, batch_norm in zip(self.convs, self.batch_norms):
             x = conv(xs[-1], edge_index)
-            x = batch_norm(F.relu(x)) if self.batch_norm else x
+            x = batch_norm(F.relu(x)) if self.batch_norm else F.relu(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
             xs.append(x)
-            x = x if self.batch_norm else F.relu(x)
 
         x = torch.cat(xs, dim=-1) if self.cat else xs[-1]
         x = self.final(x) if self.lin else x

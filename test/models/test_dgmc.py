@@ -81,12 +81,12 @@ def test_dgmc_on_multiple_graphs():
     assert torch.allclose(S1_L, S2_L.to_dense())
 
 
-def test_dgmc_append_gt():
+def test_dgmc_include_gt():
     model = DGMC(psi_1, psi_2, num_steps=1)
 
     S_idx = torch.tensor([[[0, 1], [1, 2]], [[1, 2], [0, 1]]])
     s_mask = torch.tensor([[True, False], [True, True]])
     y = torch.tensor([[0, 1], [0, 0]])
 
-    S_idx = model.__append_gt__(S_idx, s_mask, y)
+    S_idx = model.__include_gt__(S_idx, s_mask, y)
     assert S_idx.tolist() == [[[0, 1], [1, 2]], [[1, 0], [0, 1]]]
