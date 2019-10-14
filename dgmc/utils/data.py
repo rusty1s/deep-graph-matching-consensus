@@ -22,9 +22,9 @@ class PairDataset(Dataset):
     Args:
         dataset_s (torch.utils.data.Dataset): The source dataset.
         dataset_t (torch.utils.data.Dataset): The target dataset.
-        sample (bool, optional): If set to :obj:`True`, will sample a target
-            example for every source example instead of holding the product of
-            all source and target examples. (default: :obj:`False`)
+        sample (bool, optional): If set to :obj:`True`, will sample exactly
+            one target example for every source example instead of holding the
+            product of all source and target examples. (default: :obj:`False`)
     """
     def __init__(self, dataset_s, dataset_t, sample=False):
         self.dataset_s = dataset_s
