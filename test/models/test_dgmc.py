@@ -1,8 +1,7 @@
 import torch
-from dgmc.models import DGMC, GIN
-
 from torch_geometric.datasets import KarateClub
 from torch_geometric.data import Batch
+from dgmc.models import DGMC, GIN
 
 data = KarateClub()[0]
 N = data.num_nodes
@@ -23,6 +22,7 @@ def test_dgmc_repr():
         '    psi_2=GIN(8, 8, num_layers=2, batch_norm=False, cat=True, '
         'lin=True),\n'
         '    num_steps=1, k=-1\n)')
+    model.reset_parameters()
 
 
 def test_dgmc_on_single_graphs():

@@ -1,9 +1,11 @@
+from itertools import chain
+
 import torch
 import random
 from torch_geometric.data import Dataset, Data
 
 
-class MyData(Data):
+class PairData(Data):  # pragma: no cover
     def __inc__(self, key, value):
         if key == 'edge_index_s':
             return self.x_s.size(0)
@@ -28,8 +30,9 @@ class PairDataset(Dataset):
         pass
 
     def __compute_pairs__(self):
-        num_classes = max(self.dataset_s.data.y.max().item() + 1,
-                          self.dataset_t.data.y.max().item() + 1)
+        num_classes = 0
+        for data in chain(self.dataset_s, self.dataset_t):
+            num_classes = max(num_classes, data.y.max().item() + 1)
 
         y_s = torch.zeros((len(self.dataset_s), num_classes), dtype=torch.bool)
         y_t = torch.zeros((len(self.dataset_t), num_classes), dtype=torch.bool)
@@ -63,7 +66,7 @@ class PairDataset(Dataset):
         y[data_t.y] = torch.arange(data_t.num_nodes)
         y = y[data_s.y]
 
-        return MyData(
+        return PairData(
             x_s=data_s.x,
             edge_index_s=data_s.edge_index,
             edge_attr_s=data_s.edge_attr,
@@ -75,5 +78,6 @@ class PairDataset(Dataset):
         )
 
     def __repr__(self):
-        return '{}({}, {})'.format(self.__class__.__name__, self.dataset_s,
-                                   self.dataset_t)
+        return '{}({}, {}, sample={})'.format(self.__class__.__name__,
+                                              self.dataset_s, self.dataset_t,
+                                              self.sample)

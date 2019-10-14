@@ -101,7 +101,7 @@ class DGMC(torch.nn.Module):
         r"""
         Args:
             x_s (Tensor): Source graph node features of shape
-                :obj:`[batch_size * num_nodes, F]`.
+                :obj:`[batch_size * num_nodes, C_in]`.
             edge_index_s (LongTensor): Source graph edge connectivity of shape
                 :obj:`[2, num_edges]`.
             edge_attr_s (Tensor): Source graph edge features of shape
@@ -111,7 +111,7 @@ class DGMC(torch.nn.Module):
                 assignment. Can be :obj:`None` in case operating on single
                 graphs.
             x_t (Tensor): Target graph node features of shape
-                :obj:`[batch_size * num_nodes, F]`.
+                :obj:`[batch_size * num_nodes, C_in]`.
             edge_index_t (LongTensor): Target graph edge connectivity of shape
                 :obj:`[2, num_edges]`.
             edge_attr_t (Tensor): Target graph edge features of shape
@@ -140,12 +140,12 @@ class DGMC(torch.nn.Module):
         h_t, t_mask = to_dense_batch(h_t, batch_t, fill_value=0)
 
         assert h_s.size(0) == h_t.size(0), 'Encountered unequal batch-sizes'
-        (B, N_s, F), N_t = h_s.size(), h_t.size(1)
+        (B, N_s, C_out), N_t = h_s.size(), h_t.size(1)
         R_in, R_out = self.psi_2.in_channels, self.psi_2.out_channels
 
         if self.k < 1:
             # ------ Dense variant ------ #
-            S_hat = h_s @ h_t.transpose(-1, -2)  # [B, N_s, N_t, F]
+            S_hat = h_s @ h_t.transpose(-1, -2)  # [B, N_s, N_t, C_out]
             S_mask = s_mask.view(B, N_s, 1) & t_mask.view(B, 1, N_t)
             S_0 = masked_softmax(S_hat, S_mask, dim=-1)[s_mask]
 
@@ -173,10 +173,10 @@ class DGMC(torch.nn.Module):
             if self.training and y is not None:
                 S_idx = self.__append_gt__(S_idx, s_mask, y)
 
-            tmp_s = h_s.view(B, N_s, 1, F)
-            idx = S_idx.view(B, N_s * self.k, 1).expand(-1, -1, F)
-            tmp_t = torch.gather(h_t.view(B, N_t, F), -2, idx)
-            S_hat = (tmp_s * tmp_t.view(B, N_s, self.k, F)).sum(dim=-1)
+            tmp_s = h_s.view(B, N_s, 1, C_out)
+            idx = S_idx.view(B, N_s * self.k, 1).expand(-1, -1, C_out)
+            tmp_t = torch.gather(h_t.view(B, N_t, C_out), -2, idx)
+            S_hat = (tmp_s * tmp_t.view(B, N_s, self.k, C_out)).sum(dim=-1)
             S_0 = S_hat.softmax(dim=-1)[s_mask]
 
             for _ in range(self.num_steps):
