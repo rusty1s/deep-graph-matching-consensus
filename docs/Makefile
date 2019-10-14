@@ -1,5 +1,5 @@
 SPHINXBUILD := sphinx-build
-SPHINXPROJ := pytorch_scatter
+SPHINXPROJ := dgmc
 SOURCEDIR := source
 BUILDDIR := build
 
