@@ -172,8 +172,11 @@ class DGMC(torch.nn.Module):
 
             # In addition to the top-k, randomly sample negative examples and
             # ensure that the ground-truth is included as a sparse entry.
-            if self.training and y is not None and self.num_steps > 0:
-                S_idx = torch.cat([S_idx, torch.randint_like(S_idx, N_t)], -1)
+            if self.training and y is not None:
+                rnd_size = (B, N_s, min(self.k, N_t - self.k))
+                S_rnd_idx = torch.randint(N_t, rnd_size, dtype=torch.long,
+                                          device=S_idx.device)
+                S_idx = torch.cat([S_idx, S_rnd_idx], dim=-1)
                 S_idx = self.__include_gt__(S_idx, s_mask, y)
 
             k = S_idx.size(-1)
@@ -198,9 +201,10 @@ class DGMC(torch.nn.Module):
                 o_t = self.psi_2(r_t, edge_index_t, edge_attr_t)
                 o_s, o_t = to_dense(o_s, s_mask), to_dense(o_t, t_mask)
 
-                o_t = o_t.view(B, 1, N_t, R_out).expand(-1, N_s, -1, -1)
-                idx = S_idx.view(B, N_s, k, 1).expand(-1, -1, -1, R_out)
-                D = o_s.view(B, N_s, 1, R_out) - torch.gather(o_t, -2, idx)
+                o_s = o_s.view(B, N_s, 1, R_out).expand(-1, -1, k, -1)
+                idx = S_idx.view(B, N_s * k, 1).expand(-1, -1, R_out)
+                tmp_t = torch.gather(o_t.view(B, N_t, R_out), -2, idx)
+                D = o_s - tmp_t.view(B, N_s, k, R_out)
                 S_hat = S_hat + self.mlp(D).squeeze(-1)
 
             S_L = S_hat.softmax(dim=-1)[s_mask]
