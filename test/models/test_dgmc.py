@@ -6,7 +6,7 @@ from dgmc.models import DGMC, GIN
 data = KarateClub()[0]
 N = data.num_nodes
 psi_1 = GIN(data.num_node_features, 16, num_layers=2)
-psi_2 = GIN(8, 8, num_layers=2, batch_norm=False)
+psi_2 = GIN(8, 8, num_layers=2)
 
 
 def set_seed():
@@ -17,7 +17,7 @@ def test_dgmc_repr():
     model = DGMC(psi_1, psi_2, num_steps=1)
     assert model.__repr__() == (
         'DGMC(\n'
-        '    psi_1=GIN(34, 16, num_layers=2, batch_norm=True, cat=True, '
+        '    psi_1=GIN(34, 16, num_layers=2, batch_norm=False, cat=True, '
         'lin=True),\n'
         '    psi_2=GIN(8, 8, num_layers=2, batch_norm=False, cat=True, '
         'lin=True),\n'
