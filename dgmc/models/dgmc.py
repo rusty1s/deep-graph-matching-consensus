@@ -31,6 +31,12 @@ class DGMC(torch.nn.Module):
     updates correspondence scores iteratively by reaching for neighborhood
     consensus via a second graph neural network :math:`\Psi_{\theta_2}`.
 
+    .. note::
+        See the `PyTorch Geometric introductory tutorial
+        <https://pytorch-geometric.readthedocs.io/en/latest/notes/
+        introduction.html>`_ for a detailed overview of the used GNN modules
+        and the respective data format.
+
     Args:
         psi_1 (torch.nn.Module): The first GNN :math:`\Psi_{\theta_1}` which
             takes in node features :obj:`x`, edge connectivity
