@@ -16,7 +16,7 @@ def MLP(in_channels, out_channels, batch_norm=True):
 
 
 class GIN(torch.nn.Module):
-    def __init__(self, in_channels, out_channels, num_layers, batch_norm=True,
+    def __init__(self, in_channels, out_channels, num_layers, batch_norm=False,
                  cat=True, lin=True):
         super(GIN, self).__init__()
 

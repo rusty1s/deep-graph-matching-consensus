@@ -39,7 +39,7 @@ class RelConv(MessagePassing):
 
 
 class RelCNN(torch.nn.Module):
-    def __init__(self, in_channels, out_channels, num_layers, batch_norm=True,
+    def __init__(self, in_channels, out_channels, num_layers, batch_norm=False,
                  cat=True, lin=True, dropout=0.0):
         super(RelCNN, self).__init__()
 
