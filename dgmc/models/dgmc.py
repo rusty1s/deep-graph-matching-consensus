@@ -273,7 +273,7 @@ class DGMC(torch.nn.Module):
         return correct / y.size(1) if reduction == 'mean' else correct
 
     def hits_at_k(self, k, S, y, reduction='mean'):
-        r"""Computes the Hits@k of correspondence predictions.
+        r"""Computes the hits@k of correspondence predictions.
 
         Args:
             k (int): The :math:`\mathrm{top}_k` predictions to consider.
