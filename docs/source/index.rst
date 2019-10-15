@@ -3,5 +3,5 @@
 Deep Graph Matching Consensus
 =============================
 
-.. automodule:: dgmc.models.dgmc
+.. autoclass:: dgmc.DGMC
     :members:
