@@ -2,7 +2,7 @@ import torch
 from torch.nn import Linear as Lin
 from torch_geometric.nn import GINConv
 
-from mlp import MLP
+from .mlp import MLP
 
 
 class GIN(torch.nn.Module):

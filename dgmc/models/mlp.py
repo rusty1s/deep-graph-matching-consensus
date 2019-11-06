@@ -24,8 +24,8 @@ class MLP(torch.nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self):
-        for conv, batch_norm in zip(self.convs, self.batch_norms):
-            conv.reset_parameters()
+        for lin, batch_norm in zip(self.lins, self.batch_norms):
+            lin.reset_parameters()
             batch_norm.reset_parameters()
 
     def forward(self, x, *args):
