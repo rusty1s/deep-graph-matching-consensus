@@ -1,18 +1,8 @@
 import torch
-from torch.nn import (Sequential as Seq, Linear as Lin, ReLU, Identity,
-                      BatchNorm1d as BN)
+from torch.nn import Linear as Lin
 from torch_geometric.nn import GINConv
 
-
-def MLP(in_channels, out_channels, batch_norm=True):
-    return Seq(
-        Lin(in_channels, out_channels),
-        ReLU(),
-        BN(out_channels) if batch_norm else Identity(),
-        Lin(out_channels, out_channels),
-        ReLU(),
-        BN(out_channels) if batch_norm else Identity(),
-    )
+from mlp import MLP
 
 
 class GIN(torch.nn.Module):
@@ -28,7 +18,7 @@ class GIN(torch.nn.Module):
 
         self.convs = torch.nn.ModuleList()
         for _ in range(num_layers):
-            mlp = MLP(in_channels, out_channels, batch_norm)
+            mlp = MLP(in_channels, out_channels, 2, batch_norm, dropout=0.0)
             self.convs.append(GINConv(mlp, train_eps=True))
             in_channels = out_channels
 
