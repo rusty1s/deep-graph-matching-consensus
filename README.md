@@ -22,13 +22,16 @@ $ python setup.py install
 
 ## Running examples
 
-We provide training and evaluation procedures for the [WILLOW-ObjectClass](https://pytorch-geometric.readthedocs.io/en/latest/modules/datasets.html#torch_geometric.datasets.WILLOWObjectClass) dataset, the [PascalVOC with Berkely annotations](https://pytorch-geometric.readthedocs.io/en/latest/modules/datasets.html#torch_geometric.datasets.PascalVOCKeypoints) dataset, and the [DBP15K](https://pytorch-geometric.readthedocs.io/en/latest/modules/datasets.html#torch_geometric.datasets.DBP15K) dataset, *e.g.*:
+We provide training and evaluation procedures for the [WILLOW-ObjectClass](https://pytorch-geometric.readthedocs.io/en/latest/modules/datasets.html#torch_geometric.datasets.WILLOWObjectClass) dataset, the [PascalVOC with Berkely annotations](https://pytorch-geometric.readthedocs.io/en/latest/modules/datasets.html#torch_geometric.datasets.PascalVOCKeypoints) dataset, the [DBP15K](https://pytorch-geometric.readthedocs.io/en/latest/modules/datasets.html#torch_geometric.datasets.DBP15K) dataset, and the [PascalPF](https://pytorch-geometric.readthedocs.io/en/latest/modules/datasets.html#torch_geometric.datasets.PascalPF) dataset.
+Experiments can be run via:
 
 ```
 $ cd examples/
 $ python willow.py --category=Duck
 $ python pascal.py --category=Aeroplane
 $ python dbp15k.py --category=zh_en
+$ python pascal_pf.py
+$ python synthetic.py
 ```
 
 <p align="center">
