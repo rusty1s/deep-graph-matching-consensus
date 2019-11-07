@@ -1,3 +1,4 @@
+import re
 from itertools import chain
 
 import torch
@@ -7,9 +8,9 @@ from torch_geometric.data import Dataset, Data
 
 class PairData(Data):  # pragma: no cover
     def __inc__(self, key, value):
-        if key == 'edge_index_s':
+        if bool(re.search('index_s', key)):
             return self.x_s.size(0)
-        elif key == 'edge_index_t':
+        if bool(re.search('index_t', key)):
             return self.x_t.size(0)
         else:
             return 0
