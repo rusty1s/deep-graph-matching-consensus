@@ -14,7 +14,6 @@ parser.add_argument('--category', type=str, required=True)
 parser.add_argument('--cartesian', type=str, default='True')
 parser.add_argument('--dim', type=int, default=128)
 parser.add_argument('--rnd_dim', type=int, default=32)
-parser.add_argument('--dropout', type=float, default=0.5)
 parser.add_argument('--num_layers', type=int, default=2)
 parser.add_argument('--num_steps', type=int, default=10)
 parser.add_argument('--lr', type=float, default=0.001)
@@ -79,16 +78,16 @@ def train():
     return total_loss / len(train_loader.dataset)
 
 
+@torch.no_grad()
 def test():
     model.eval()
 
     correct = num_examples = 0
     for data in test_loader:
         data = data.to(device)
-        with torch.no_grad():
-            S_0, S_L = model(data.x_s, data.edge_index_s, data.edge_attr_s,
-                             data.x_s_batch, data.x_t, data.edge_index_t,
-                             data.edge_attr_t, data.x_t_batch)
+        S_0, S_L = model(data.x_s, data.edge_index_s, data.edge_attr_s,
+                         data.x_s_batch, data.x_t, data.edge_index_t,
+                         data.edge_attr_t, data.x_t_batch)
         y = generate_y(data.y)
         correct += model.acc(S_L, y, reduction='sum')
         num_examples += y.size(1)

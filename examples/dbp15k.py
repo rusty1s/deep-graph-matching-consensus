@@ -47,12 +47,12 @@ def train():
     return loss
 
 
+@torch.no_grad()
 def test():
     model.eval()
 
-    with torch.no_grad():
-        _, S_L = model(data.x1, data.edge_index1, None, None, data.x2,
-                       data.edge_index2, None, None)
+    _, S_L = model(data.x1, data.edge_index1, None, None, data.x2,
+                   data.edge_index2, None, None)
 
     hits1 = model.acc(S_L, data.test_y)
     hits10 = model.hits_at_k(10, S_L, data.test_y)

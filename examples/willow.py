@@ -6,7 +6,7 @@ import torch_geometric.transforms as T
 from torch_geometric.datasets import WILLOWObjectClass
 from torch_geometric.data import DataLoader, Batch
 
-from dgmc.models import DGMC, SplineCNN
+from dgmc.models import DGMC, SplineCNN, MLP
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--category', type=str, required=True)
@@ -32,9 +32,10 @@ path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data', 'WILLOW')
 dataset = WILLOWObjectClass(path, args.category, transform=transform)
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-psi_1 = SplineCNN(dataset.num_node_features, args.dim,
-                  dataset.num_edge_features, args.num_layers, cat=False,
-                  dropout=0.5)
+# psi_1 = SplineCNN(dataset.num_node_features, args.dim,
+#                   dataset.num_edge_features, args.num_layers, cat=False,
+#                   dropout=0.5)
+psi_1 = MLP(dataset.num_node_features, args.dim, 2, dropout=0.5)
 psi_2 = SplineCNN(args.rnd_dim, args.rnd_dim, dataset.num_edge_features,
                   args.num_layers, cat=True, dropout=0.0)
 model = DGMC(psi_1, psi_2, num_steps=args.num_steps).to(device)
@@ -66,6 +67,7 @@ def train(train_loader, optimizer):
     return total_loss / len(train_loader.dataset)
 
 
+@torch.no_grad()
 def test(test_dataset, train_loader):
     model.eval()
 
@@ -74,10 +76,9 @@ def test(test_dataset, train_loader):
         for data_t in train_loader:
             data_s = Batch.from_data_list([data_s] * data_t.num_graphs)
             data_s, data_t = data_s.to(device), data_t.to(device)
-            with torch.no_grad():
-                _, S_L = model(data_s.x, data_s.edge_index, data_s.edge_attr,
-                               data_s.batch, data_t.x, data_t.edge_index,
-                               data_t.edge_attr, data_t.batch)
+            _, S_L = model(data_s.x, data_s.edge_index, data_s.edge_attr,
+                           data_s.batch, data_t.x, data_t.edge_index,
+                           data_t.edge_attr, data_t.batch)
             y = generate_y(num_nodes=10, batch_size=data_t.num_graphs)
             correct += model.acc(S_L, y, reduction='sum')
             num_examples += y.size(1)
