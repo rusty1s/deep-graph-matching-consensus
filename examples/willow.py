@@ -6,7 +6,7 @@ import torch_geometric.transforms as T
 from torch_geometric.datasets import WILLOWObjectClass
 from torch_geometric.data import DataLoader, Batch
 
-from dgmc.models import DGMC, SplineCNN, MLP
+from dgmc.models import DGMC, SplineCNN
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--category', type=str, required=True)
