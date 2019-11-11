@@ -130,4 +130,5 @@ def test(category):
 
 
 train()
-test()
+for category in PascalPF.categories:
+    test(category)
