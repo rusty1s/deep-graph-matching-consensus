@@ -30,7 +30,7 @@ psi_1 = RelCNN(data.x1.size(-1), args.dim, args.num_layers, batch_norm=False,
                cat=True, lin=True, dropout=0.5)
 psi_2 = RelCNN(args.rnd_dim, args.rnd_dim, args.num_layers, batch_norm=False,
                cat=True, lin=True, dropout=0.0)
-model = DGMC(psi_1, psi_2, num_steps=None, k=None).to(device)
+model = DGMC(psi_1, psi_2, num_steps=None, k=args.k).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 
@@ -62,12 +62,10 @@ def test():
 
 print('Optimize initial feature matching...')
 model.num_steps = 0
-model.k = 50
-for epoch in range(1, 141):
+for epoch in range(1, 201):
     if epoch == 101:
         print('Refine correspondence matrix...')
         model.num_steps = args.num_steps
-        model.k = args.k
         model.detach = True
 
     loss = train()
