@@ -49,10 +49,9 @@ path = osp.join('..', 'data', 'WILLOW')
 datasets = [WILLOW(path, cat, transform) for cat in WILLOW.categories]
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-# psi_1 = SplineCNN(dataset.num_node_features, args.dim,
-#                   dataset.num_edge_features, args.num_layers, cat=False,
-#                   dropout=0.5)
-psi_1 = MLP(dataset.num_node_features, args.dim)
+psi_1 = SplineCNN(dataset.num_node_features, args.dim,
+                  dataset.num_edge_features, args.num_layers, cat=False,
+                  dropout=0.5)
 psi_2 = SplineCNN(args.rnd_dim, args.rnd_dim, dataset.num_edge_features,
                   args.num_layers, cat=True, dropout=0.0)
 model = DGMC(psi_1, psi_2, num_steps=args.num_steps).to(device)

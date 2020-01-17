@@ -4,9 +4,21 @@
 
 --------------------------------------------------------------------------------
 
+[![Build Status][build-image]][build-url]
+[![Docs Status][docs-image]][docs-url]
+[![Code Coverage][coverage-image]][coverage-url]
+
+**[Documentation](https://deep-graph-matching-consensus.readthedocs.io)**
+
 This is a PyTorch implementation of **Deep Graph Matching Consensus**, as described in our paper:
 
 Matthias Fey, Jan E. Lenssen, Christopher Morris, Jonathan Masci, Nils M. Kriege: [Deep Graph Matching Consensus](https://openreview.net/forum?id=HyeJf1HKvS) *(ICLR 2020)*
+
+## Requirements
+
+* **[PyTorch](https://pytorch.org/get-started/locally/)** (>=1.2.0)
+* **[PyTorch Geometric](https://github.com/rusty1s/pytorch_geometric)** (master)
+* **[KeOps](https://github.com/getkeops/keops)** (>=1.1.0)
 
 ## Installation
 
@@ -14,11 +26,7 @@ Matthias Fey, Jan E. Lenssen, Christopher Morris, Jonathan Masci, Nils M. Kriege
 $ python setup.py install
 ```
 
-## Requirements
-
-* **[PyTorch](https://pytorch.org/get-started/locally/)** (>=1.2.0)
-* **[PyTorch Geometric](https://github.com/rusty1s/pytorch_geometric)** (master)
-* **[KeOps](https://github.com/getkeops/keops)** (>=1.1.0)
+Head over to our [documentation](https://deep-graph-matching-consensus.readthedocs.io) for a better understanding of the `DGMC` base class.
 
 ## Running examples
 

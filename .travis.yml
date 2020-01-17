@@ -28,7 +28,7 @@ install:
   - pip install sphinx_rtd_theme
 script:
   - python -c "import torch; print(torch.__version__)"
-  - pycodestyle .
+  - pycodestyle --ignore=E731 .
   - flake8 .
   - python setup.py install
   - python setup.py test
