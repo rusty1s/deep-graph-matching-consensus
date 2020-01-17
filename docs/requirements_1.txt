@@ -1,6 +1,6 @@
 -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
 numpy
 torch_nightly
-pykeops
+pykeops==1.2
 sphinx
 sphinx_rtd_theme
