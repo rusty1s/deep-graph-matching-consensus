@@ -1,3 +1,10 @@
+[build-image]: https://travis-ci.org/rusty1s/deep-graph-matching-consensus.svg?branch=master
+[build-url]: https://travis-ci.org/rusty1s/deep-graph-matching-consensus
+[docs-image]: https://readthedocs.org/projects/deep-graph-matching-consensus/badge/?version=latest
+[docs-url]: https://deep-graph-matching-consensus.readthedocs.io/en/latest/?badge=latest
+[coverage-image]: https://codecov.io/gh/rusty1s/deep-graph-matching-consensus/branch/master/graph/badge.svg
+[coverage-url]: https://codecov.io/github/rusty1s/deep-graph-matching-consensus?branch=master
+
 <h1 align="center">Deep Graph Matching Consensus</h1>
 
 <img width="100%" src="https://raw.githubusercontent.com/rusty1s/deep-graph-matching-consensus/master/figures/overview.png?token=ABU7ZATGTDHG6DPI3ANYBUS5TXPOQ" />
@@ -26,7 +33,7 @@ Matthias Fey, Jan E. Lenssen, Christopher Morris, Jonathan Masci, Nils M. Kriege
 $ python setup.py install
 ```
 
-Head over to our [documentation](https://deep-graph-matching-consensus.readthedocs.io) for a better understanding of the `DGMC` base class.
+Head over to our [documentation](https://deep-graph-matching-consensus.readthedocs.io) for a detailed overview of the `DGMC` module.
 
 ## Running examples
 
