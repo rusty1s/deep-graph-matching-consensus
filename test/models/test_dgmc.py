@@ -1,10 +1,11 @@
 import torch
-from torch_geometric.datasets import KarateClub
-from torch_geometric.data import Batch
+from torch_geometric.data import Data, Batch
 from dgmc.models import DGMC, GIN
 
-data = KarateClub()[0]
-N = data.num_nodes
+x = torch.randn(4, 16)
+edge_index = torch.tensor([[0, 1, 1, 2, 2, 3], [1, 0, 2, 1, 3, 2]])
+data = Data(x=x, edge_index=edge_index)
+
 psi_1 = GIN(data.num_node_features, 16, num_layers=2)
 psi_2 = GIN(8, 8, num_layers=2)
 
@@ -29,7 +30,8 @@ def test_dgmc_on_single_graphs():
     set_seed()
     model = DGMC(psi_1, psi_2, num_steps=1)
     x, e = data.x, data.edge_index
-    y = torch.stack([torch.arange(N), torch.arange(N)], dim=0)
+    y = torch.arange(data.num_nodes)
+    y = torch.stack([y, y], dim=0)
 
     set_seed()
     S1_0, S1_L = model(x, e, None, None, x, e, None, None)
@@ -42,7 +44,8 @@ def test_dgmc_on_single_graphs():
 
     set_seed()
     model.k = data.num_nodes  # Test a sparse "dense" variant.
-    y = torch.stack([torch.arange(N), torch.arange(N)], dim=0)
+    y = torch.arange(data.num_nodes)
+    y = torch.stack([y, y], dim=0)
     S2_0, S2_L = model(x, e, None, None, x, e, None, None, y)
     loss2 = model.loss(S2_0, y)
     loss2.backward()
