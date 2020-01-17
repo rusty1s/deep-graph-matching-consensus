@@ -16,7 +16,6 @@ jobs:
 install:
   - pip install numpy
   - pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
-  - pip install pykeops
   - pip install torch-scatter
   - pip install torch-sparse
   - pip install torch-cluster

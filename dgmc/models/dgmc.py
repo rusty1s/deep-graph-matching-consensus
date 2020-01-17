@@ -3,7 +3,11 @@ from torch.nn import Sequential as Seq, Linear as Lin, ReLU
 from torch_scatter import scatter_add
 from torch_geometric.utils import to_dense_batch
 from torch_geometric.nn.inits import reset
-from pykeops.torch import LazyTensor
+
+try:
+    from pykeops.torch import LazyTensor
+except ImportError:
+    LazyTensor = None
 
 EPS = 1e-8
 
@@ -78,10 +82,10 @@ class DGMC(torch.nn.Module):
         self.psi_2.reset_parameters()
         reset(self.mlp)
 
-    def __top_k__(self, x_s, x_t):
+    def __top_k__(self, x_s, x_t):  # pragma: no cover
         r"""Memory-efficient top-k correspondence computation."""
         x_s, x_t = x_s.unsqueeze(-2), x_t.unsqueeze(-3)
-        if self.backend != 'test':  # pragma: no cover
+        if LazyTensor is not None:
             x_s, x_t = LazyTensor(x_s), LazyTensor(x_t)
             S_ij = (-x_s * x_t).sum(dim=-1)
             return S_ij.argKmin(self.k, dim=2, backend=self.backend)

@@ -4,3 +4,4 @@ source=dgmc
 exclude_lines =
     pragma: no cover
     raise
+    except
