@@ -2,7 +2,7 @@ import torch
 from torch_geometric.data import Data, Batch
 from dgmc.models import DGMC, GIN
 
-x = torch.randn(4, 16)
+x = torch.randn(4, 32)
 edge_index = torch.tensor([[0, 1, 1, 2, 2, 3], [1, 0, 2, 1, 3, 2]])
 data = Data(x=x, edge_index=edge_index)
 
@@ -18,7 +18,7 @@ def test_dgmc_repr():
     model = DGMC(psi_1, psi_2, num_steps=1)
     assert model.__repr__() == (
         'DGMC(\n'
-        '    psi_1=GIN(34, 16, num_layers=2, batch_norm=False, cat=True, '
+        '    psi_1=GIN(32, 16, num_layers=2, batch_norm=False, cat=True, '
         'lin=True),\n'
         '    psi_2=GIN(8, 8, num_layers=2, batch_norm=False, cat=True, '
         'lin=True),\n'
@@ -29,6 +29,7 @@ def test_dgmc_repr():
 def test_dgmc_on_single_graphs():
     set_seed()
     model = DGMC(psi_1, psi_2, num_steps=1)
+    model.backend = 'CPU'
     x, e = data.x, data.edge_index
     y = torch.arange(data.num_nodes)
     y = torch.stack([y, y], dim=0)
@@ -67,6 +68,7 @@ def test_dgmc_on_single_graphs():
 def test_dgmc_on_multiple_graphs():
     set_seed()
     model = DGMC(psi_1, psi_2, num_steps=1)
+    model.backend = 'CPU'
 
     batch = Batch.from_data_list([data, data])
     x, e, b = batch.x, batch.edge_index, batch.batch
@@ -86,6 +88,7 @@ def test_dgmc_on_multiple_graphs():
 
 def test_dgmc_include_gt():
     model = DGMC(psi_1, psi_2, num_steps=1)
+    model.backend = 'CPU'
 
     S_idx = torch.tensor([[[0, 1], [1, 2]], [[1, 2], [0, 1]]])
     s_mask = torch.tensor([[True, False], [True, True]])
