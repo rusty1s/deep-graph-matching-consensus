@@ -29,7 +29,7 @@ def test_dgmc_repr():
 def test_dgmc_on_single_graphs():
     set_seed()
     model = DGMC(psi_1, psi_2, num_steps=1)
-    model.backend = 'CPU'
+    model.backend = 'test'
     x, e = data.x, data.edge_index
     y = torch.arange(data.num_nodes)
     y = torch.stack([y, y], dim=0)
@@ -68,7 +68,7 @@ def test_dgmc_on_single_graphs():
 def test_dgmc_on_multiple_graphs():
     set_seed()
     model = DGMC(psi_1, psi_2, num_steps=1)
-    model.backend = 'CPU'
+    model.backend = 'test'
 
     batch = Batch.from_data_list([data, data])
     x, e, b = batch.x, batch.edge_index, batch.batch
@@ -88,7 +88,7 @@ def test_dgmc_on_multiple_graphs():
 
 def test_dgmc_include_gt():
     model = DGMC(psi_1, psi_2, num_steps=1)
-    model.backend = 'CPU'
+    model.backend = 'test'
 
     S_idx = torch.tensor([[[0, 1], [1, 2]], [[1, 2], [0, 1]]])
     s_mask = torch.tensor([[True, False], [True, True]])
