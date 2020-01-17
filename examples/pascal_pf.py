@@ -10,8 +10,8 @@ from torch_geometric.datasets import PascalPF
 from dgmc.models import DGMC, SplineCNN
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dim', type=int, default=128)
-parser.add_argument('--rnd_dim', type=int, default=32)
+parser.add_argument('--dim', type=int, default=256)
+parser.add_argument('--rnd_dim', type=int, default=64)
 parser.add_argument('--num_layers', type=int, default=2)
 parser.add_argument('--num_steps', type=int, default=10)
 parser.add_argument('--lr', type=float, default=0.001)
@@ -34,7 +34,7 @@ class RandomGraphDataset(torch.utils.data.Dataset):
         self.transform = transform
 
     def __len__(self):
-        return 1024 * 64
+        return 1024
 
     def __getitem__(self, idx):
         num_inliers = random.randint(self.min_inliers, self.max_inliers)
@@ -74,10 +74,13 @@ train_dataset = RandomGraphDataset(30, 60, 0, 20, transform=transform)
 train_loader = DataLoader(train_dataset, args.batch_size, shuffle=True,
                           follow_batch=['x_s', 'x_t'])
 
+path = osp.join('..', 'data', 'PascalPF')
+test_datasets = [PascalPF(path, cat, transform) for cat in PascalPF.categories]
+
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 psi_1 = SplineCNN(1, args.dim, 2, args.num_layers, cat=False, dropout=0.0)
 psi_2 = SplineCNN(args.rnd_dim, args.rnd_dim, 2, args.num_layers, cat=True,
-                  lin=False, dropout=0.0)
+                  dropout=0.0)
 model = DGMC(psi_1, psi_2, num_steps=args.num_steps).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
@@ -85,8 +88,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 def train():
     model.train()
 
-    total_loss = 0
-    total_examples = total_correct = 0
+    total_loss = total_examples = total_correct = 0
     for i, data in enumerate(train_loader):
         optimizer.zero_grad()
         data = data.to(device)
@@ -94,30 +96,24 @@ def train():
                          data.x_s_batch, data.x_t, data.edge_index_t,
                          data.edge_attr_t, data.x_t_batch)
         y = torch.stack([data.y_index_s, data.y_t], dim=0)
-        pred = S_L[y[0]].argmax(dim=1).eq(y[1])
-        total_correct += pred.sum().item()
-        total_examples += pred.numel()
         loss = model.loss(S_0, y)
         loss = model.loss(S_L, y) + loss if model.num_steps > 0 else loss
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
-        if (i + 1) % 10 == 0:
-            print(i + 1, len(train_loader), total_loss / 10,
-                  total_correct / total_examples)
-            total_loss = 0
+        total_correct += model.acc(S_L, y, reduction='sum')
+        total_examples += y.size(1)
+
+    return total_loss / len(train_loader), total_correct / total_examples
 
 
 @torch.no_grad()
-def test(category):
+def test(dataset):
     model.eval()
 
-    path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data', 'PF')
-    test_dataset = PascalPF(path, category, transform=transform)
-
     correct = num_examples = 0
-    for pair in test_dataset.pairs:
-        data_s, data_t = test_dataset[pair[0]], test_dataset[pair[1]]
+    for pair in dataset.pairs:
+        data_s, data_t = dataset[pair[0]], dataset[pair[1]]
         data_s, data_t = data_s.to(device), data_t.to(device)
         S_0, S_L = model(data_s.x, data_s.edge_index, data_s.edge_attr, None,
                          data_t.x, data_t.edge_index, data_t.edge_attr, None)
@@ -125,10 +121,16 @@ def test(category):
         y = torch.stack([y, y], dim=0)
         correct += model.acc(S_L, y, reduction='sum')
         num_examples += y.size(1)
-    print('Acc', test_dataset.category, correct / num_examples)
-    return correct / num_examples, len(test_dataset.pairs)
+
+    return correct / num_examples
 
 
-train()
-for category in PascalPF.categories:
-    test(category)
+for epoch in range(1, 33):
+    loss, acc = train()
+    print(f'Epoch: {epoch:02d}, Loss: {loss:.4f}, Acc: {acc:.2f}')
+
+    accs = [100 * test(test_dataset) for test_dataset in test_datasets]
+    accs += [sum(accs) / len(accs)]
+
+    print(' '.join([c[:5].ljust(5) for c in PascalPF.categories] + ['mean']))
+    print(' '.join([f'{acc:.1f}'.ljust(5) for acc in accs]))

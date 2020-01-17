@@ -6,7 +6,7 @@
 
 This is a PyTorch implementation of **Deep Graph Matching Consensus**, as described in our paper:
 
-Matthias Fey, Jan E. Lenssen, Christopher Morris, Jonathan Masci, Nils M. Kriege: [Deep Graph Matching Consensus](https://arxiv.org/abs/) *(CoRR 2019)*
+Matthias Fey, Jan E. Lenssen, Christopher Morris, Jonathan Masci, Nils M. Kriege: [Deep Graph Matching Consensus](https://openreview.net/forum?id=HyeJf1HKvS) *(ICLR 2020)*
 
 ## Installation
 
@@ -17,21 +17,20 @@ $ python setup.py install
 ## Requirements
 
 * **[PyTorch](https://pytorch.org/get-started/locally/)** (>=1.2.0)
-* **[PyTorch Geometric](https://github.com/rusty1s/pytorch_geometric)** (>=1.3.2)
+* **[PyTorch Geometric](https://github.com/rusty1s/pytorch_geometric)** (master)
 * **[KeOps](https://github.com/getkeops/keops)** (>=1.1.0)
 
 ## Running examples
 
-We provide training and evaluation procedures for the [WILLOW-ObjectClass](https://pytorch-geometric.readthedocs.io/en/latest/modules/datasets.html#torch_geometric.datasets.WILLOWObjectClass) dataset, the [PascalVOC with Berkely annotations](https://pytorch-geometric.readthedocs.io/en/latest/modules/datasets.html#torch_geometric.datasets.PascalVOCKeypoints) dataset, the [DBP15K](https://pytorch-geometric.readthedocs.io/en/latest/modules/datasets.html#torch_geometric.datasets.DBP15K) dataset, and the [PascalPF](https://pytorch-geometric.readthedocs.io/en/latest/modules/datasets.html#torch_geometric.datasets.PascalPF) dataset.
+We provide training and evaluation procedures for the [PascalVOC with Berkely annotations](https://pytorch-geometric.readthedocs.io/en/latest/modules/datasets.html#torch_geometric.datasets.PascalVOCKeypoints), the [WILLOW-ObjectClass](https://pytorch-geometric.readthedocs.io/en/latest/modules/datasets.html#torch_geometric.datasets.WILLOWObjectClass) dataset, the [PascalPF](https://pytorch-geometric.readthedocs.io/en/latest/modules/datasets.html#torch_geometric.datasets.PascalPF) dataset, and the [DBP15K](https://pytorch-geometric.readthedocs.io/en/latest/modules/datasets.html#torch_geometric.datasets.DBP15K) dataset.
 Experiments can be run via:
 
 ```
 $ cd examples/
-$ python willow.py --category=Duck
-$ python pascal.py --category=Aeroplane
-$ python dbp15k.py --category=zh_en
+$ python pascal.py
+$ python willow.py
 $ python pascal_pf.py
-$ python synthetic.py
+$ python dbp15k.py --category=zh_en
 ```
 
 <p align="center">
@@ -46,12 +45,11 @@ $ python synthetic.py
 Please cite [our paper](https://arxiv.org/abs/) if you use this code in your own work:
 
 ```
-@article{Fey/etal/2019,
+@inproceedings{Fey/etal/2020,
   title={Deep Graph Matching Consensus},
   author={Fey, M. and Lenssen, J. E. and Morris, C. and Masci, J. and Kriege, N. M.},
-  journal={CoRR},
-  volume={abs/},
-  year={2019},
+  booktitle={International Conference on Learning Representations (ICLR)},
+  year={2020},
 }
 ```
 

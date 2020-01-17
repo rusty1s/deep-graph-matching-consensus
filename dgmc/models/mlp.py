@@ -30,7 +30,7 @@ class MLP(torch.nn.Module):
 
     def forward(self, x, *args):
         for i, (lin, bn) in enumerate(zip(self.lins, self.batch_norms)):
-            if self.dropout and i == self.num_layers - 1:
+            if i == self.num_layers - 1:
                 x = F.dropout(x, p=self.dropout, training=self.training)
             x = lin(x)
             if i < self.num_layers - 1:

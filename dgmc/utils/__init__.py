@@ -1,5 +1,6 @@
-from .data import PairDataset
+from .data import PairDataset, ValidPairDataset
 
 __all__ = [
     'PairDataset',
+    'ValidPairDataset',
 ]

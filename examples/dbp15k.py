@@ -23,7 +23,7 @@ class SumEmbedding(object):
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data', 'DBP15K')
+path = osp.join('..', 'data', 'DBP15K')
 data = DBP15K(path, args.category, transform=SumEmbedding())[0].to(device)
 
 psi_1 = RelCNN(data.x1.size(-1), args.dim, args.num_layers, batch_norm=False,
@@ -72,5 +72,5 @@ for epoch in range(1, 201):
 
     if epoch % 10 == 0 or epoch > 100:
         hits1, hits10 = test()
-        print('{:03d}: Loss: {:.4f}, Hits@1: {:.4f}, Hits@10: {:.4f}'.format(
-            epoch, loss, hits1, hits10))
+        print((f'{epoch:03d}: Loss: {loss:.4f}, Hits@1: {hits1:.4f}, '
+               f'Hits@10: {hits10:.4f}'))

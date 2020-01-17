@@ -3,7 +3,7 @@ from itertools import chain
 
 import torch
 import random
-from torch_geometric.data import Dataset, Data
+from torch_geometric.data import Data
 
 
 class PairData(Data):  # pragma: no cover
@@ -16,7 +16,7 @@ class PairData(Data):  # pragma: no cover
             return 0
 
 
-class PairDataset(Dataset):
+class PairDataset(torch.utils.data.Dataset):
     r"""Combines two datasets, a source dataset and a target dataset, by
     building pairs between separate dataset examples.
 
@@ -31,14 +31,53 @@ class PairDataset(Dataset):
         self.dataset_s = dataset_s
         self.dataset_t = dataset_t
         self.sample = sample
-        super(PairDataset, self).__init__('/tmp/')
+
+    def __len__(self):
+        return len(self.dataset_s) if self.sample else len(
+            self.dataset_s) * len(self.dataset_t)
+
+    def __getitem__(self, idx):
+        if self.sample:
+            data_s = self.dataset_s[idx]
+            data_t = self.dataset_t[random.randint(0, len(self.dataset_t) - 1)]
+        else:
+            data_s = self.dataset_s[idx // len(self.dataset_t)]
+            data_t = self.dataset_t[idx % len(self.dataset_t)]
+
+        return PairData(
+            x_s=data_s.x,
+            edge_index_s=data_s.edge_index,
+            edge_attr_s=data_s.edge_attr,
+            x_t=data_t.x,
+            edge_index_t=data_t.edge_index,
+            edge_attr_t=data_t.edge_attr,
+            num_nodes=None,
+        )
+
+    def __repr__(self):
+        return '{}({}, {}, sample={})'.format(self.__class__.__name__,
+                                              self.dataset_s, self.dataset_t,
+                                              self.sample)
+
+
+class ValidPairDataset(torch.utils.data.Dataset):
+    r"""Combines two datasets, a source dataset and a target dataset, by
+    building valid pairs between separate dataset examples.
+    A pair is valid if each node class in the source graph also exists in the
+    target graph.
+
+    Args:
+        dataset_s (torch.utils.data.Dataset): The source dataset.
+        dataset_t (torch.utils.data.Dataset): The target dataset.
+        sample (bool, optional): If set to :obj:`True`, will sample exactly
+            one target example for every source example instead of holding the
+            product of all source and target examples. (default: :obj:`False`)
+    """
+    def __init__(self, dataset_s, dataset_t, sample=False):
+        self.dataset_s = dataset_s
+        self.dataset_t = dataset_t
+        self.sample = sample
         self.pairs, self.cumdeg = self.__compute_pairs__()
-
-    def _download(self):
-        pass
-
-    def _process(self):
-        pass
 
     def __compute_pairs__(self):
         num_classes = 0
@@ -62,7 +101,7 @@ class PairDataset(Dataset):
         return pairs.tolist(), [0] + cumdeg.tolist()
 
     def __len__(self):
-        return len(self.cumdeg) - 1 if self.sample else len(self.pairs)
+        return len(self.dataset_s) if self.sample else len(self.pairs)
 
     def __getitem__(self, idx):
         if self.sample:
