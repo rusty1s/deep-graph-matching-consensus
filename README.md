@@ -42,7 +42,7 @@ $ python dbp15k.py --category=zh_en
 
 ## Cite
 
-Please cite [our paper](https://arxiv.org/abs/) if you use this code in your own work:
+Please cite [our paper](https://openreview.net/forum?id=HyeJf1HKvS) if you use this code in your own work:
 
 ```
 @inproceedings{Fey/etal/2020,
