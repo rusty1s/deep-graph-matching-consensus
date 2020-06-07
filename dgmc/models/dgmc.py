@@ -84,13 +84,16 @@ class DGMC(torch.nn.Module):
 
     def __top_k__(self, x_s, x_t):  # pragma: no cover
         r"""Memory-efficient top-k correspondence computation."""
-        x_s, x_t = x_s.unsqueeze(-2), x_t.unsqueeze(-3)
         if LazyTensor is not None:
+            x_s = x_s.unsqueeze(-2)  # [..., n_s, 1, d]
+            x_t = x_t.unsqueeze(-3)  # [..., 1, n_t, d]
             x_s, x_t = LazyTensor(x_s), LazyTensor(x_t)
             S_ij = (-x_s * x_t).sum(dim=-1)
             return S_ij.argKmin(self.k, dim=2, backend=self.backend)
         else:
-            S_ij = (x_s * x_t).sum(dim=-1)
+            x_s = x_s  # [..., n_s, d]
+            x_t = x_t.transpose(-1, -2)  # [..., d, n_t]
+            S_ij = x_s @ x_t
             return S_ij.topk(self.k, dim=2)[1]
 
     def __include_gt__(self, S_idx, s_mask, y):
