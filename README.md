@@ -24,7 +24,7 @@ Matthias Fey, Jan E. Lenssen, Christopher Morris, Jonathan Masci, Nils M. Kriege
 ## Requirements
 
 * **[PyTorch](https://pytorch.org/get-started/locally/)** (>=1.2.0)
-* **[PyTorch Geometric](https://github.com/rusty1s/pytorch_geometric)** (master)
+* **[PyTorch Geometric](https://github.com/rusty1s/pytorch_geometric)** (>=1.5.0)
 * **[KeOps](https://github.com/getkeops/keops)** (>=1.1.0)
 
 ## Installation
