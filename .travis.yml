@@ -16,7 +16,7 @@ jobs:
 install:
   - pip install numpy
   - pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
-  - pip install torch-scatter==latest+cpu -f https://pytorch-geometric.com/whl/torch-.1.5.0.html
+  - pip install torch-scatter==latest+cpu -f https://pytorch-geometric.com/whl/torch-1.5.0.html
   - pip install torch-sparse==latest+cpu -f https://pytorch-geometric.com/whl/torch-1.5.0.html
   - pip install torch-spline-conv==latest+cpu -f https://pytorch-geometric.com/whl/torch-1.5.0.html
   - pip install torch-geometric
