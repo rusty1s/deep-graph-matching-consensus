@@ -3,16 +3,6 @@ jobs:
     - os: linux
       language: python
       python: 3.7
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-5
-            - g++-5
-      env:
-        - CC=gcc-5
-        - CXX=g++-5
 install:
   - pip install numpy
   - pip install torch torchvision -f https://download.pytorch.org/whl/cpu/torch-1.5.0%2Bcpu-cp37-cp37m-linux_x86_64.whl
