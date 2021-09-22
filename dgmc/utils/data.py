@@ -7,7 +7,7 @@ from torch_geometric.data import Data
 
 
 class PairData(Data):  # pragma: no cover
-    def __inc__(self, key, value):
+    def __inc__(self, key, value, *args):
         if bool(re.search('index_s', key)):
             return self.x_s.size(0)
         if bool(re.search('index_t', key)):
